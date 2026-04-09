@@ -1,6 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Users, Calendar, TrendingUp } from 'lucide-react';
+import DashboardChart from '@/components/DashboardChart';
+import SuspensionPage from '@/components/SuspensionPage';
 
 interface Liga {
   id: string;
@@ -61,8 +68,10 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
         liga_id: liga.id 
       }]);
 
-    if (error) alert(error.message);
-    else {
+    if (error) {
+      toast.error('Error al registrar equipo: ' + error.message);
+    } else {
+      toast.success('Equipo registrado exitosamente');
       setNombreEquipo('');
       const { data } = await supabase.from('equipos').select('*').eq('liga_id', liga.id);
       if (data) setEquipos(data);
@@ -71,12 +80,12 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
 
   const generarCalendario = async () => {
     if (equipos.length < 2) {
-      alert("Necesitas al menos 2 equipos para generar un torneo.");
+      toast.error("Necesitas al menos 2 equipos para generar un torneo.");
       return;
     }
 
     if (!liga) {
-      alert("Error: datos de la liga no disponibles.");
+      toast.error("Error: datos de la liga no disponibles.");
       return;
     }
 
@@ -115,64 +124,136 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
     // Insertar en Supabase
     const { error } = await supabase.from('partidos').insert(nuevosPartidos);
     
-    if (error) alert("Error al generar: " + error.message);
-    else alert("¡Calendario Round Robin generado con éxito!");
+    if (error) {
+      toast.error("Error al generar calendario: " + error.message);
+    } else {
+      toast.success("¡Calendario Round Robin generado con éxito!");
+    }
   };
 
   if (!liga) return <p className="p-10 text-black">Cargando datos de la liga...</p>;
   
   if (!liga.estatus_pago) {
-    return (
-      <div className="p-10 bg-red-100 text-red-800 min-h-screen font-bold text-center">
-        <h1 className="text-4xl mb-4">SERVICIO SUSPENDIDO</h1>
-        <p>Esta liga no ha realizado su pago de suscripción.</p>
-      </div>
-    );
+    return <SuspensionPage />;
   }
 
+  const chartData = [
+    { jornada: 'Jornada 1', goles: 12 },
+    { jornada: 'Jornada 2', goles: 8 },
+    { jornada: 'Jornada 3', goles: 15 },
+    { jornada: 'Jornada 4', goles: 10 },
+  ];
+
   return (
-    <div className="p-8 text-black min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6">Organizador: {liga.nombre_liga}</h1>
-      
-      <div className="bg-white p-6 rounded shadow-md max-w-md mb-8">
-        <h2 className="text-lg font-bold mb-4">Registrar Equipo</h2>
-        <input 
-          type="text" 
-          value={nombreEquipo}
-          onChange={(e) => setNombreEquipo(e.target.value)}
-          className="border p-2 w-full mb-4 rounded"
-          placeholder="Nombre del equipo"
-        />
-        <button onClick={registrarEquipo} className="bg-green-600 text-white p-2 w-full rounded hover:bg-green-700">
-          Guardar Equipo
-        </button>
+    <div className="p-4 md:p-8 text-black min-h-screen bg-gray-50">
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Panel de Control</h1>
+        <p className="text-gray-600">Gestionando: {liga.nombre_liga}</p>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Equipos Registrados</h2>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {equipos.map(eq => (
-            <div key={eq.id} className="p-4 border bg-white rounded shadow-sm">
-              {eq.nombre}
+      {/* Stats Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold">{equipos.length}</p>
+                <p className="text-sm text-gray-600">Equipos Registrados</p>
+              </div>
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
         
-        {equipos.length >= 2 && (
-          <div className="mt-8 p-6 bg-white rounded shadow-md">
-            <h2 className="text-xl font-bold mb-4">Generador de Calendario</h2>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{equipos.length >= 2 ? (equipos.length - 1) * equipos.length : 0}</p>
+                <p className="text-sm text-gray-600">Partidos Totales</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-8 w-8 text-purple-600" />
+              <div>
+                <p className="text-2xl font-bold">11.3</p>
+                <p className="text-sm text-gray-600">Prom. Goles/Jornada</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Registrar Equipo */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Registrar Nuevo Equipo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <input 
+              type="text" 
+              value={nombreEquipo}
+              onChange={(e) => setNombreEquipo(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Nombre del equipo"
+            />
+            <Button onClick={registrarEquipo} className="w-full">
+              Guardar Equipo
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Equipos Registrados */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Equipos Registrados
+              <Badge variant="secondary">{equipos.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+              {equipos.map(eq => (
+                <div key={eq.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <span className="font-medium">{eq.nombre}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chart Section */}
+      <div className="mt-8">
+        <DashboardChart data={chartData} />
+      </div>
+
+      {/* Calendar Generator */}
+      {equipos.length >= 2 && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Generador de Calendario</CardTitle>
+          </CardHeader>
+          <CardContent>
             <p className="text-sm text-gray-600 mb-4">
               Crea todos los encuentros de la temporada automáticamente usando el algoritmo Round Robin.
             </p>
-            <button 
+            <Button 
               onClick={generarCalendario}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold"
+              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               Generar Rol de Juegos Automático
-            </button>
-          </div>
-        )}
-      </div>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
