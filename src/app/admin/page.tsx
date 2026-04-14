@@ -1,45 +1,57 @@
 'use client';
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-export default function SuperAdminPage() {
-  const [nombre, setNombre] = useState('');
-  const [slug, setSlug] = useState('');
+import DashboardMetrics from '@/components/admin/DashboardMetrics';
+import LigaManagement from '@/components/admin/LigaManagement';
+import PaymentSimulation from '@/components/admin/PaymentSimulation';
+import { ProtectedRoute } from '@/components/auth/AuthenticationSystem';
 
-  const crearLiga = async () => {
-    const { data, error } = await supabase
-      .from('ligas')
-      .insert([{ 
-        nombre_liga: nombre, 
-        slug: slug, 
-        estatus_pago: true, // Por ahora activamos manual para pruebas
-        plan: 'Bronce' 
-      }]);
+function SuperAdminContent() {
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-    if (error) alert('Error: ' + error.message);
-    else alert('¡Liga creada con éxito!');
-  };
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'ligas', label: 'Gestión de Ligas', icon: '⚽' },
+    { id: 'pagos', label: 'Simulación de Pagos', icon: '💳' }
+  ];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Panel SuperAdmin - Alta de Ligas</h1>
-      <div className="flex flex-col gap-4 max-w-sm">
-        <input 
-          placeholder="Nombre de la Liga" 
-          className="border p-2 rounded text-black"
-          onChange={(e) => setNombre(e.target.value)}
-        />
-        <input 
-          placeholder="URL única (slug)" 
-          className="border p-2 rounded text-black"
-          onChange={(e) => setSlug(e.target.value)}
-        />
-        <button 
-          onClick={crearLiga}
-          className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-        >
-          Dar de Alta Liga
-        </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Tabs de navegación */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido del tab activo */}
+      <div>
+        {activeTab === 'dashboard' && <DashboardMetrics />}
+        {activeTab === 'ligas' && <LigaManagement />}
+        {activeTab === 'pagos' && <PaymentSimulation />}
       </div>
     </div>
+  );
+}
+
+export default function SuperAdminPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <SuperAdminContent />
+    </ProtectedRoute>
   );
 }

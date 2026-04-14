@@ -1,11 +1,17 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Trophy, Users, Settings, Home, Search } from 'lucide-react';
+import { Menu, X, Trophy, Users, Settings, Home, Search, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/components/auth/AuthenticationSystem';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, isSuperAdmin, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="bg-white shadow-lg border-b sticky top-0 z-50">
@@ -34,20 +40,62 @@ export default function Navigation() {
               <Search className="h-4 w-4" />
               <span>Buscar Ligas</span>
             </Link>
-            <Link 
-              href="/mis-ligas" 
-              className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              <Users className="h-4 w-4" />
-              <span>Mis Ligas</span>
-            </Link>
-            <Link 
-              href="/admin" 
-              className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              <span>Admin</span>
-            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  href="/mis-ligas" 
+                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Mis Ligas</span>
+                </Link>
+                <Link 
+                  href="/perfil" 
+                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Perfil</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/auth/login" 
+                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Iniciar Sesión</span>
+                </Link>
+                <Link 
+                  href="/auth/signup" 
+                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Registrarse</span>
+                </Link>
+              </>
+            )}
+
+            {isAuthenticated && isSuperAdmin && (
+              <Link 
+                href="/admin" 
+                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (
+              <button
+                onClick={handleSignOut}
+                className="flex items-center space-x-1 text-gray-700 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -82,22 +130,67 @@ export default function Navigation() {
                 <Search className="h-4 w-4" />
                 <span>Buscar Ligas</span>
               </Link>
-              <Link 
-                href="/mis-ligas" 
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-                onClick={() => setIsOpen(false)}
-              >
-                <Users className="h-4 w-4" />
-                <span>Mis Ligas</span>
-              </Link>
-              <Link 
-                href="/admin" 
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-                onClick={() => setIsOpen(false)}
-              >
-                <Settings className="h-4 w-4" />
-                <span>Admin</span>
-              </Link>
+              
+              {isAuthenticated ? (
+                <>
+                  <Link 
+                    href="/mis-ligas" 
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Mis Ligas</span>
+                  </Link>
+                  <Link 
+                    href="/perfil" 
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Perfil</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    href="/auth/login" 
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Iniciar Sesión</span>
+                  </Link>
+                  <Link 
+                    href="/auth/signup" 
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Registrarse</span>
+                  </Link>
+                </>
+              )}
+
+              {isAuthenticated && isSuperAdmin && (
+                <Link 
+                  href="/admin" 
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
+              )}
+
+              {isAuthenticated && (
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -1,5 +1,4 @@
-/* para usar la base de datos en cualquier parte del proyecto */
-
+// src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
