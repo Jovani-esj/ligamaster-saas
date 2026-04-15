@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Trophy, Users, Settings, Home, Search, LogOut, User } from 'lucide-react';
+import { Menu, X, Trophy, Settings, Home, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/AuthenticationSystem';
 
@@ -33,6 +33,7 @@ export default function Navigation() {
               <Home className="h-4 w-4" />
               <span>Inicio</span>
             </Link>
+            
             <Link 
               href="/ligas" 
               className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
@@ -115,6 +116,7 @@ export default function Navigation() {
                 <Home className="h-4 w-4" />
                 <span>Inicio</span>
               </Link>
+              
               <Link 
                 href="/ligas" 
                 className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"

@@ -25,7 +25,7 @@ export default function Home() {
         .from('ligas')
         .select('*')
         .eq('estatus_pago', true)
-        .order('created_at', { ascending: false })
+        .order('fecha_registro', { ascending: false })
         .limit(6);
       
       if (data) setLigas(data);

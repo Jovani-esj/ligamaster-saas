@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +13,8 @@ interface Liga {
   slug: string;
   estatus_pago: boolean;
   descripcion?: string;
-  created_at: string;
+  fecha_registro: string;
+  plan: string;
 }
 
 export default function BuscarLigas() {
@@ -24,16 +24,18 @@ export default function BuscarLigas() {
   
   useEffect(() => {
     const cargarLigas = async () => {
-      const { data } = await supabase
-        .from('ligas')
-        .select('*')
-        .eq('estatus_pago', true)
-        .order('created_at', { ascending: false });
-      
-      if (data) {
-        setLigas(data);
+      try {
+        const response = await fetch('/api/ligas');
+        const result = await response.json();
+        
+        if (result.data) {
+          setLigas(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching ligas:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     
     cargarLigas();
@@ -121,9 +123,20 @@ export default function BuscarLigas() {
                             </span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 shrink-0 ml-2">
-                          Activa
-                        </Badge>
+                        <div className="flex flex-col gap-1 shrink-0 ml-2">
+                          <Badge 
+                            variant={liga.estatus_pago ? "default" : "secondary"}
+                            className={liga.estatus_pago 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-red-100 text-red-800"
+                            }
+                          >
+                            {liga.estatus_pago ? "Pagada" : "Pendiente"}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {liga.plan}
+                          </Badge>
+                        </div>
                       </div>
                       
                       {liga.descripcion && (
@@ -135,7 +148,7 @@ export default function BuscarLigas() {
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-1" />
-                          {new Date(liga.created_at).toLocaleDateString('es-ES')}
+                          {new Date(liga.fecha_registro).toLocaleDateString('es-ES')}
                         </div>
                         <div className="flex items-center text-blue-600 font-medium">
                           <span>Ver liga</span>

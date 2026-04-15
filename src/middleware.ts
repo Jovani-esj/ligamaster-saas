@@ -8,6 +8,16 @@ const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  // Si es una ruta API, permitir acceso inmediatamente
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+  
+  // Si es una ruta /liga/, permitir acceso (estas son rutas públicas de visualización)
+  if (pathname.startsWith('/liga/')) {
+    return NextResponse.next();
+  }
+  
   // Extraer el slug de la URL para rutas dinámicas de ligas
   // Ejemplo: /liga-toluca/dashboard -> slug = "liga-toluca"
   const slugMatch = pathname.match(/^\/([^\/]+)/);
@@ -17,6 +27,7 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = [
     '/',
     '/ligas',
+    '/liga',
     '/auth/login',
     '/auth/register',
     '/auth/signup',
@@ -31,7 +42,9 @@ export async function middleware(request: NextRequest) {
     '/perfil',
     '/configuracion',
     '/crear-liga',
-    '/api'
+    '/liga-no-encontrada',
+    '/liga-inactiva',
+    '/liga-suspendida'
   ];
 
   // Si es una ruta pública o no hay slug, permitir acceso

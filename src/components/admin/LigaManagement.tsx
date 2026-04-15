@@ -8,23 +8,19 @@ interface Liga {
   nombre_liga: string;
   slug: string;
   descripcion?: string;
-  logo_url?: string;
   fecha_registro: string;
   fecha_vencimiento?: string;
   estatus_pago: boolean;
   plan: 'Bronce' | 'Plata' | 'Oro';
-  contacto_email?: string;
-  contacto_telefono?: string;
-  activa: boolean;
+  owner_id?: string;
 }
 
 interface FormData {
   nombre_liga: string;
   slug: string;
   descripcion: string;
-  contacto_email: string;
-  contacto_telefono: string;
   plan: 'Bronce' | 'Plata' | 'Oro';
+  estatus_pago: boolean;
 }
 
 export default function LigaManagement() {
@@ -38,9 +34,8 @@ export default function LigaManagement() {
     nombre_liga: '',
     slug: '',
     descripcion: '',
-    contacto_email: '',
-    contacto_telefono: '',
-    plan: 'Bronce'
+    plan: 'Bronce',
+    estatus_pago: false
   });
 
   useEffect(() => {
@@ -80,8 +75,7 @@ export default function LigaManagement() {
           .from('ligas')
           .insert([{
             ...formData,
-            estatus_pago: false, // Nueva liga inicia sin pago
-            activa: true
+            estatus_pago: false // Nueva liga inicia sin pago
           }]);
 
         if (error) throw error;
@@ -100,9 +94,8 @@ export default function LigaManagement() {
       nombre_liga: '',
       slug: '',
       descripcion: '',
-      contacto_email: '',
-      contacto_telefono: '',
-      plan: 'Bronce'
+      plan: 'Bronce',
+      estatus_pago: false
     });
     setEditingLiga(null);
     setShowForm(false);
@@ -114,18 +107,17 @@ export default function LigaManagement() {
       nombre_liga: liga.nombre_liga,
       slug: liga.slug,
       descripcion: liga.descripcion || '',
-      contacto_email: liga.contacto_email || '',
-      contacto_telefono: liga.contacto_telefono || '',
-      plan: liga.plan
+      plan: liga.plan,
+      estatus_pago: liga.estatus_pago
     });
     setShowForm(true);
   };
 
-  const toggleStatus = async (liga: Liga, field: 'estatus_pago' | 'activa') => {
+  const toggleStatus = async (liga: Liga, field: 'estatus_pago') => {
     try {
       const { error } = await supabase
         .from('ligas')
-        .update({ [field]: !liga[field] })
+        .update({ [field]: !liga.estatus_pago })
         .eq('id', liga.id);
 
       if (error) throw error;
@@ -253,28 +245,6 @@ export default function LigaManagement() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email de Contacto
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.contacto_email}
-                    onChange={(e) => setFormData({...formData, contacto_email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono de Contacto
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.contacto_telefono}
-                    onChange={(e) => setFormData({...formData, contacto_telefono: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
 
               <div>
@@ -328,9 +298,6 @@ export default function LigaManagement() {
                   Estatus Pago
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Activa
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha Registro
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -366,18 +333,6 @@ export default function LigaManagement() {
                       }`}
                     >
                       {liga.estatus_pago ? 'Pagado' : 'Pendiente'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => toggleStatus(liga, 'activa')}
-                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                        liga.activa 
-                          ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
-                    >
-                      {liga.activa ? 'Activa' : 'Inactiva'}
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

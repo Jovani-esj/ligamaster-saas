@@ -13,26 +13,10 @@ interface Liga {
   fecha_vencimiento?: string;
 }
 
-interface PaymentRecord {
-  id: string;
-  liga_id: string;
-  monto: number;
-  fecha_pago: string;
-  metodo_pago: string;
-  estatus: string;
-  referencia: string;
-  meses_contratados: number;
-  ligas: {
-    nombre_liga: string;
-    slug: string;
-  };
-}
-
 export default function PaymentSimulation() {
   const [ligas, setLigas] = useState<Liga[]>([]);
-  const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([]);
   const [selectedLiga, setSelectedLiga] = useState('');
-  const [months, setMonths] = useState(1);
+  const [paymentMonths, setPaymentMonths] = useState(1);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
@@ -44,23 +28,13 @@ export default function PaymentSimulation() {
 
   const fetchData = async () => {
     try {
-      const [ligasResponse, paymentsResponse] = await Promise.all([
-        supabase.from('ligas').select('*').order('nombre_liga'),
-        supabase
-          .from('pagos')
-          .select(`
-            *,
-            ligas (nombre_liga, slug)
-          `)
-          .order('fecha_pago', { ascending: false })
-          .limit(20)
-      ]);
+      const { data, error } = await supabase
+        .from('ligas')
+        .select('*')
+        .order('fecha_registro', { ascending: false });
 
-      if (ligasResponse.error) throw ligasResponse.error;
-      if (paymentsResponse.error) throw paymentsResponse.error;
-
-      setLigas(ligasResponse.data || []);
-      setPaymentHistory(paymentsResponse.data || []);
+      if (error) throw error;
+      setLigas(data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -82,9 +56,9 @@ export default function PaymentSimulation() {
       // Simular procesamiento de pago
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const monto = precios[liga.plan] * months;
+      const monto = precios[liga.plan] * paymentMonths;
       const fechaVencimiento = new Date();
-      fechaVencimiento.setMonth(fechaVencimiento.getMonth() + months);
+      fechaVencimiento.setMonth(fechaVencimiento.getMonth() + paymentMonths);
 
       // Crear registro de pago
       const { error: paymentError } = await supabase
@@ -95,7 +69,7 @@ export default function PaymentSimulation() {
           metodo_pago: 'simulado',
           estatus: 'completado',
           referencia: `SIM-${Date.now()}`,
-          meses_contratados: months
+          meses_contratados: paymentMonths
         }]);
 
       if (paymentError) throw paymentError;
@@ -116,7 +90,7 @@ export default function PaymentSimulation() {
 
       await fetchData();
       setSelectedLiga('');
-      setMonths(1);
+      setPaymentMonths(1);
       
       alert('¡Pago procesado con éxito!');
     } catch (error) {
@@ -154,7 +128,7 @@ export default function PaymentSimulation() {
   };
 
   const selectedLigaData = ligas.find(l => l.id === selectedLiga);
-  const totalAmount = selectedLigaData ? precios[selectedLigaData.plan] * months : 0;
+  const totalAmount = selectedLigaData ? precios[selectedLigaData.plan] * paymentMonths : 0;
 
   if (loading) {
     return <div className="p-8">Cargando datos de pagos...</div>;
@@ -201,8 +175,8 @@ export default function PaymentSimulation() {
               type="number"
               min="1"
               max="12"
-              value={months}
-              onChange={(e) => setMonths(parseInt(e.target.value) || 1)}
+              value={paymentMonths}
+              onChange={(e) => setPaymentMonths(parseInt(e.target.value) || 1)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -247,10 +221,10 @@ export default function PaymentSimulation() {
               <p>Liga: <strong>{selectedLigaData.nombre_liga}</strong></p>
               <p>Plan: <strong>{selectedLigaData.plan}</strong></p>
               <p>Precio por mes: <strong>${precios[selectedLigaData.plan]}</strong></p>
-              <p>Meses: <strong>{months}</strong></p>
+              <p>Meses: <strong>{paymentMonths}</strong></p>
               <p>Total: <strong>${totalAmount}</strong></p>
               <p>Fecha de vencimiento: <strong>
-                {new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                {new Date(Date.now() + paymentMonths * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
               </strong></p>
             </div>
           </div>
@@ -381,35 +355,12 @@ export default function PaymentSimulation() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paymentHistory.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(payment.fecha_pago).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{payment.ligas.nombre_liga}</div>
-                    <div className="text-sm text-gray-500">/{payment.ligas.slug}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${payment.monto}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {payment.meses_contratados}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {payment.referencia}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      payment.estatus === 'completado' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {payment.estatus}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                  <p>No hay historial de pagos disponible</p>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
