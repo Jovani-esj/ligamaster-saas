@@ -15,10 +15,10 @@ import {
   Save
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 
 export default function ConfiguracionPage() {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
     email_notifications: true,

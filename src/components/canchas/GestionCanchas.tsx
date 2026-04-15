@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,11 @@ interface Cancha {
 }
 
 export default function GestionCanchas() {
-  const { user, profile, isAdminLiga, isAdminAdmin } = useAuth();
+  const { user, profile } = useSimpleAuth();
+  
+  // For simple auth, check if user has admin roles
+  const isAdminLiga = profile?.rol === 'admin_liga';
+  const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [canchas, setCanchas] = useState<Cancha[]>([]);
   const [showCrearCancha, setShowCrearCancha] = useState(false);
@@ -52,13 +56,7 @@ export default function GestionCanchas() {
     liga_id: ''
   });
 
-  useEffect(() => {
-    if (user && (isAdminLiga || isAdminAdmin)) {
-      cargarCanchas();
-    }
-  }, [user, isAdminLiga, isAdminAdmin]);
-
-  const cargarCanchas = async () => {
+  const cargarCanchas = useCallback(async () => {
     try {
       let query = supabase.from('canchas').select('*');
       
@@ -78,7 +76,13 @@ export default function GestionCanchas() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdminAdmin, profile?.liga_id]);
+
+  useEffect(() => {
+    if (user && (isAdminLiga || isAdminAdmin)) {
+      cargarCanchas();
+    }
+  }, [user, isAdminLiga, isAdminAdmin, cargarCanchas]);
 
   const resetForm = () => {
     setFormData({

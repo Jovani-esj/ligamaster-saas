@@ -10,14 +10,13 @@ import {
 } from '@/types/database';
 import { 
   getEquipos, 
-  getEquipo, 
   createEquipo, 
   updateEquipo, 
   deleteEquipo,
   getJugadores,
   getEstadisticasEquipo 
 } from '@/lib/database';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,14 +24,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Eye, Users, Settings, User, Palette } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users, Settings } from 'lucide-react';
+import Image from 'next/image';
 
-interface EquipoManagerProps {
-  ligaId: string;
-}
 
-export default function EquipoManager({ ligaId }: EquipoManagerProps) {
-  const { profile } = useAuth();
+export default function EquipoManager({ ligaId }: { ligaId?: string }) {
+  const { profile } = useSimpleAuth();
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -51,13 +48,15 @@ export default function EquipoManager({ ligaId }: EquipoManagerProps) {
   });
 
   // Verificar permisos
-  const permisos = profile ? PERMISOS_POR_ROL[profile.rol] : null;
+  const permisos = profile ? PERMISOS_POR_ROL[profile.rol as keyof typeof PERMISOS_POR_ROL] : null;
   const puedeVerEquipos = permisos?.puede_ver_equipos || false;
   const puedeCrearEquipos = permisos?.puede_crear_equipos || false;
   const puedeEditarEquipos = permisos?.puede_editar_equipos || false;
   const puedeEliminarEquipos = permisos?.puede_eliminar_equipos || false;
 
   const fetchEquipos = useCallback(async () => {
+    if (!ligaId) return;
+    
     try {
       setLoading(true);
       const data = await getEquipos(ligaId);
@@ -99,7 +98,7 @@ export default function EquipoManager({ ligaId }: EquipoManagerProps) {
 
   const handleCreateEquipo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!puedeCrearEquipos) return;
+    if (!puedeCrearEquipos || !ligaId) return;
 
     try {
       await createEquipo(formData, ligaId);
@@ -270,10 +269,12 @@ export default function EquipoManager({ ligaId }: EquipoManagerProps) {
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-3">
                     {equipo.logo_url && (
-                      <img 
+                      <Image 
                         src={equipo.logo_url} 
                         alt={equipo.nombre}
                         className="w-12 h-12 rounded-lg object-cover"
+                        width={48}
+                        height={48}
                       />
                     )}
                     <div>

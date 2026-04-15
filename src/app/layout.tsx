@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import SimpleNavigation from "@/components/SimpleNavigation";
 import { SimpleAuthProvider } from "@/components/auth/SimpleAuthenticationSystem";
+import LeagueVerificationProvider from "@/components/LeagueVerificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <SimpleAuthProvider>
-          <SimpleNavigation />
-          <main className="flex-1">{children}</main>
-          <Toaster />
+          <LeagueVerificationProvider>
+            <SimpleNavigation />
+            <main className="flex-1">{children}</main>
+            <Toaster />
+          </LeagueVerificationProvider>
         </SimpleAuthProvider>
       </body>
     </html>

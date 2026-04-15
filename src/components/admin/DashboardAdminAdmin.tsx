@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,8 @@ import {
   Trophy, 
   TrendingUp,
   CreditCard,
-  AlertTriangle,
   CheckCircle,
   XCircle,
-  Calendar,
   BarChart3,
   Crown,
   Settings
@@ -48,20 +46,17 @@ interface Liga {
 }
 
 export default function DashboardAdminAdmin() {
-  const { user, profile, isAdminAdmin } = useAuth();
+  const { user, profile } = useSimpleAuth();
+  
+  // For simple auth, check if user has adminadmin or superadmin role
+  const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState<EstadisticasGlobales | null>(null);
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'todas' | 'pagadas' | 'no_pagadas'>('todas');
 
-  useEffect(() => {
-    if (user && isAdminAdmin) {
-      cargarDatosAdmin();
-    }
-  }, [user, isAdminAdmin]);
-
-  const cargarDatosAdmin = async () => {
+  const cargarDatosAdmin = useCallback(async () => {
     try {
       // Cargar estadísticas globales
       await cargarEstadisticasGlobales();
@@ -74,7 +69,13 @@ export default function DashboardAdminAdmin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user && isAdminAdmin) {
+      cargarDatosAdmin();
+    }
+  }, [user, isAdminAdmin, cargarDatosAdmin]);
 
   const cargarEstadisticasGlobales = async () => {
     try {
@@ -362,7 +363,7 @@ export default function DashboardAdminAdmin() {
                 </div>
                 <select
                   value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value as any)}
+                  onChange={(e) => setFiltroEstado(e.target.value as 'todas' | 'pagadas' | 'no_pagadas')}
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="todas">Todas las ligas</option>

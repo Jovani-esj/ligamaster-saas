@@ -49,7 +49,6 @@ export class RoundRobinScheduler {
 
     const totalEquipos = equiposConFantasma.length;
     const jornadasPorVuelta = totalEquipos - 1;
-    const totalJornadas = jornadasPorVuelta * this.configuracion.vueltas;
 
     const partidos: PartidoProgramado[] = [];
 
@@ -133,7 +132,7 @@ export class RoundRobinScheduler {
     const partidosPorJornada = this.agruparPorJornada(partidos);
 
     // Para cada jornada
-    for (const [jornada, partidosJornada] of Object.entries(partidosPorJornada)) {
+    for (const [, partidosJornada] of Object.entries(partidosPorJornada)) {
       const fechaJornada = this.encontrarSiguienteFechaDisponible(fechaActual);
       
       // Asignar horas a los partidos de la jornada
@@ -143,9 +142,13 @@ export class RoundRobinScheduler {
       let horaActual = new Date(fechaJornada);
       horaActual.setHours(horaInicio.hours, horaInicio.minutes, 0, 0);
 
+      // Create Date object for horaFin to use in comparison
+      const horaFinDate = new Date(fechaJornada);
+      horaFinDate.setHours(horaFin.hours, horaFin.minutes, 0, 0);
+
       for (const partido of partidosJornada) {
         // Verificar que aún hay tiempo disponible
-        if (this.compararHoras(horaActual, horaFin) <= 0) {
+        if (this.compararHoras(horaActual, horaFinDate) <= 0) {
           partido.fecha_hora = new Date(horaActual.getTime());
           partidosConFechas.push(partido);
 
@@ -195,7 +198,7 @@ export class RoundRobinScheduler {
    */
   private encontrarSiguienteFechaDisponible(fecha: Date): Date {
     const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-    let fechaActual = new Date(fecha);
+    const fechaActual = new Date(fecha);
 
     while (!this.configuracion.dias_juego.includes(diasSemana[fechaActual.getDay()])) {
       fechaActual.setDate(fechaActual.getDate() + 1);

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,10 @@ interface UserProfile {
 }
 
 export default function AdminAdminDashboard() {
-  const { isAdminAdmin } = useAuth();
+  const { profile } = useSimpleAuth();
+  
+  // For simple auth, check if user has adminadmin or superadmin role
+  const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);

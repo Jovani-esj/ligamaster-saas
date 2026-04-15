@@ -1,9 +1,9 @@
 'use client';
 import Dashboard from '@/components/admin/Dashboard';
 import LigaManager from '@/components/admin/LigaManager';
-import { ProtectedRoute } from '@/components/auth/AuthenticationSystem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, Trophy, Settings } from 'lucide-react';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 
 function AdminContent() {
   return (
@@ -48,9 +48,28 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  return (
-    <ProtectedRoute>
-      <AdminContent />
-    </ProtectedRoute>
-  );
+  const { profile } = useSimpleAuth();
+  
+  // Check if user has admin privileges
+  const isAdmin = profile?.rol === 'admin_liga' || 
+                  profile?.rol === 'adminadmin' || 
+                  profile?.rol === 'superadmin';
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Restringido</h1>
+            <p className="text-gray-600">
+              No tienes permisos de administrador para acceder a esta sección.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminContent />;
 }
