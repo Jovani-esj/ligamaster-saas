@@ -12,8 +12,10 @@ interface UserProfile {
   apellido?: string;
   telefono?: string;
   fecha_nacimiento?: string;
-  rol: 'superadmin' | 'admin_liga' | 'usuario';
+  rol: 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario';
   liga_id?: string;
+  equipo_id?: string;
+  es_capitan_equipo?: boolean;
   activo: boolean;
 }
 
@@ -30,7 +32,9 @@ interface AuthContextType {
   updateProfile: (data: Partial<UserProfile>) => Promise<boolean>;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
+  isAdminAdmin: boolean;
   isAdminLiga: boolean;
+  isCapitanEquipo: boolean;
   hasPaidAccess: () => Promise<boolean>;
 }
 
@@ -420,7 +424,9 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
     updateProfile,
     isAuthenticated: !!user,
     isSuperAdmin: profile?.rol === 'superadmin',
+    isAdminAdmin: profile?.rol === 'adminadmin',
     isAdminLiga: profile?.rol === 'admin_liga',
+    isCapitanEquipo: profile?.rol === 'capitan_equipo' || profile?.es_capitan_equipo || false,
     hasPaidAccess: profile ? checkPaidAccess : async () => false,
   };
 

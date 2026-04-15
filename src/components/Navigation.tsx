@@ -1,13 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Trophy, Settings, Home, LogOut, User } from 'lucide-react';
+import { Menu, X, Trophy, Settings, Home, LogOut, User, Users, MapPin, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/AuthenticationSystem';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, isSuperAdmin, signOut } = useAuth();
+  const { isAuthenticated, isAdminAdmin, isAdminLiga, isCapitanEquipo, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -42,6 +42,14 @@ export default function Navigation() {
               <span>Ligas</span>
             </Link>
             
+            <Link 
+              href="/roles-juego" 
+              className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Roles de Juego</span>
+            </Link>
+            
             {isAuthenticated ? (
               <>
                 <Link 
@@ -71,14 +79,48 @@ export default function Navigation() {
               </>
             )}
 
-            {isAuthenticated && isSuperAdmin && (
-              <Link 
-                href="/admin" 
-                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Admin</span>
-              </Link>
+            {isAuthenticated && (
+              <>
+                {(isAdminLiga || isCapitanEquipo) && (
+                  <Link 
+                    href="/equipos" 
+                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Equipos</span>
+                  </Link>
+                )}
+                
+                {isAdminLiga && (
+                  <>
+                    <Link 
+                      href="/canchas" 
+                      className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      <span>Canchas</span>
+                    </Link>
+                    
+                    <Link 
+                      href="/programacion-partidos" 
+                      className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      <span>Programación</span>
+                    </Link>
+                  </>
+                )}
+
+                {isAdminAdmin && (
+                  <Link 
+                    href="/admin-admin" 
+                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+              </>
             )}
 
             {isAuthenticated && (
@@ -126,6 +168,15 @@ export default function Navigation() {
                 <span>Ligas</span>
               </Link>
               
+              <Link 
+                href="/roles-juego" 
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                onClick={() => setIsOpen(false)}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Roles de Juego</span>
+              </Link>
+              
               {isAuthenticated ? (
                 <>
                   <Link 
@@ -158,9 +209,46 @@ export default function Navigation() {
                 </>
               )}
 
-              {isAuthenticated && isSuperAdmin && (
+              {isAuthenticated && (
+                <>
+                  {(isAdminLiga || isCapitanEquipo) && (
+                    <Link 
+                      href="/equipos" 
+                      className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Equipos</span>
+                    </Link>
+                  )}
+                  
+                  {isAdminLiga && (
+                    <>
+                      <Link 
+                        href="/canchas" 
+                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <MapPin className="h-4 w-4" />
+                        <span>Canchas</span>
+                      </Link>
+                      
+                      <Link 
+                        href="/programacion-partidos" 
+                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Calendar className="h-4 w-4" />
+                        <span>Programación</span>
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+
+              {isAuthenticated && isAdminAdmin && (
                 <Link 
-                  href="/admin" 
+                  href="/admin-admin" 
                   className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                   onClick={() => setIsOpen(false)}
                 >
