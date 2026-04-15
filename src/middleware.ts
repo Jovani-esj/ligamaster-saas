@@ -16,6 +16,7 @@ export async function middleware(request: NextRequest) {
   // Rutas que no requieren verificación de liga
   const publicRoutes = [
     '/',
+    '/ligas',
     '/auth/login',
     '/auth/register',
     '/auth/signup',

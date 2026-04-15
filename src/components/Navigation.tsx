@@ -34,22 +34,15 @@ export default function Navigation() {
               <span>Inicio</span>
             </Link>
             <Link 
-              href="/buscar" 
+              href="/ligas" 
               className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
             >
-              <Search className="h-4 w-4" />
-              <span>Buscar Ligas</span>
+              <Trophy className="h-4 w-4" />
+              <span>Ligas</span>
             </Link>
             
             {isAuthenticated ? (
               <>
-                <Link 
-                  href="/mis-ligas" 
-                  className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Mis Ligas</span>
-                </Link>
                 <Link 
                   href="/perfil" 
                   className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
@@ -123,24 +116,16 @@ export default function Navigation() {
                 <span>Inicio</span>
               </Link>
               <Link 
-                href="/buscar" 
+                href="/ligas" 
                 className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                 onClick={() => setIsOpen(false)}
               >
-                <Search className="h-4 w-4" />
-                <span>Buscar Ligas</span>
+                <Trophy className="h-4 w-4" />
+                <span>Ligas</span>
               </Link>
               
               {isAuthenticated ? (
                 <>
-                  <Link 
-                    href="/mis-ligas" 
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Mis Ligas</span>
-                  </Link>
                   <Link 
                     href="/perfil" 
                     className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"

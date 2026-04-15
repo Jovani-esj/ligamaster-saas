@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Deshabilitar middleware en modo de desarrollo si hay problemas
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
+  serverExternalPackages: ['@supabase/supabase-js'],
   // Configuración para manejar variables de entorno en middleware
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

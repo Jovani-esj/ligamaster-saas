@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<boolean>;
   signInWithFacebook: () => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<boolean>;
   isAuthenticated: boolean;
@@ -40,6 +41,91 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Funciones definidas antes del useEffect
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      // Primero intentar obtener un solo perfil
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        
+        // Si hay múltiples perfiles, obtener el más reciente
+        if (error.code === 'PGRST116' && error.details?.includes('contains')) {
+          console.log('Multiple profiles found, fetching the most recent one');
+          const { data: profiles, error: multiError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (multiError) {
+            console.error('Error fetching multiple profiles:', multiError);
+            return null;
+          }
+
+          if (profiles && profiles.length > 0) {
+            const profile = profiles[0];
+            setProfile(profile);
+            return profile;
+          }
+        }
+        
+        // Si no hay perfil, no es un error crítico
+        if (error.code === 'PGRST116') {
+          console.log('No profile found for user, will create one if needed');
+          return null;
+        }
+        
+        return null;
+      }
+
+      setProfile(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  }, []);
+
+  const createOAuthUserProfile = useCallback(async (user: User) => {
+    try {
+      // Extraer nombre del metadata o user_metadata
+      const fullName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+      const nombre = fullName.split(' ')[0] || '';
+      const apellido = fullName.split(' ').slice(1).join(' ') || '';
+      
+      const { error } = await supabase
+        .from('user_profiles')
+        .insert([{
+          user_id: user.id,
+          nombre: nombre,
+          apellido: apellido,
+          telefono: null,
+          fecha_nacimiento: null,
+          rol: 'usuario',
+          liga_id: null,
+        }]);
+
+      if (error) {
+        console.error('Error creating OAuth user profile:', error);
+        return false;
+      }
+
+      // Refrescar perfil después de crearlo
+      await fetchUserProfile(user.id);
+      return true;
+    } catch (error) {
+      console.error('Error creating OAuth user profile:', error);
+      return false;
+    }
+  }, [fetchUserProfile]);
 
   // Cargar sesión inicial
   useEffect(() => {
@@ -68,7 +154,12 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          const userProfile = await fetchUserProfile(session.user.id);
+          
+          // Crear perfil automáticamente si no existe (para usuarios OAuth)
+          if (!userProfile) {
+            await createOAuthUserProfile(session.user);
+          }
         } else {
           setProfile(null);
         }
@@ -77,26 +168,7 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
     );
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
+  }, [fetchUserProfile, createOAuthUserProfile]);
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -246,6 +318,34 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
     }
   };
 
+  const signInWithGoogle = async (): Promise<boolean> => {
+    try {
+      setLoading(true);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) {
+        console.error('Google auth error:', error);
+        toast.error('Error al autenticar con Google: ' + error.message);
+        return false;
+      }
+
+      // OAuth redirect will handle the rest
+      return true;
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      toast.error('Error inesperado al autenticar con Google');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -315,6 +415,7 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
     signIn,
     signUp,
     signInWithFacebook,
+    signInWithGoogle,
     signOut,
     updateProfile,
     isAuthenticated: !!user,
