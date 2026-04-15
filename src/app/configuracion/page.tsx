@@ -15,7 +15,7 @@ import {
   Save
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { useAuth } from '@/components/auth/AuthenticationSystem';
 
 export default function ConfiguracionPage() {
   const { user } = useAuth();

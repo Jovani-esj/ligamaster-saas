@@ -1,9 +1,10 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { AlertTriangle, CreditCard, Mail, Phone } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LigaSuspendida() {
+function LigaSuspendidaContent() {
   const searchParams = useSearchParams();
   const nombre = searchParams.get('nombre') || 'esta liga';
   const plan = searchParams.get('plan') || 'Bronce';
@@ -83,5 +84,22 @@ export default function LigaSuspendida() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LigaSuspendida() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <LigaSuspendidaContent />
+    </Suspense>
   );
 }
