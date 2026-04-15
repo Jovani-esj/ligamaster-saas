@@ -42,6 +42,8 @@ export async function middleware(request: NextRequest) {
     '/perfil',
     '/configuracion',
     '/crear-liga',
+    '/roles-juego',
+    '/equipos',
     '/liga-no-encontrada',
     '/liga-inactiva',
     '/liga-suspendida'

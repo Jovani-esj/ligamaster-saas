@@ -1,57 +1,56 @@
 'use client';
-import { useState } from 'react';
-import DashboardMetrics from '@/components/admin/DashboardMetrics';
-import LigaManagement from '@/components/admin/LigaManagement';
-import PaymentSimulation from '@/components/admin/PaymentSimulation';
+import Dashboard from '@/components/admin/Dashboard';
+import LigaManager from '@/components/admin/LigaManager';
 import { ProtectedRoute } from '@/components/auth/AuthenticationSystem';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart3, Trophy, Settings } from 'lucide-react';
 
-function SuperAdminContent() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'ligas', label: 'Gestión de Ligas', icon: '⚽' },
-    { id: 'pagos', label: 'Simulación de Pagos', icon: '💳' }
-  ];
-
+function AdminContent() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Tabs de navegación */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="ligas" className="flex items-center space-x-2">
+              <Trophy className="h-4 w-4" />
+              <span>Ligas</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Configuración</span>
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Contenido del tab activo */}
-      <div>
-        {activeTab === 'dashboard' && <DashboardMetrics />}
-        {activeTab === 'ligas' && <LigaManagement />}
-        {activeTab === 'pagos' && <PaymentSimulation />}
+          <TabsContent value="dashboard" className="space-y-6">
+            <Dashboard />
+          </TabsContent>
+
+          <TabsContent value="ligas" className="space-y-6">
+            <LigaManager />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold mb-4">Configuración del Sistema</h3>
+              <p className="text-gray-600">
+                Panel de configuración del sistema - En desarrollo
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 }
 
-export default function SuperAdminPage() {
+export default function AdminPage() {
   return (
-    <ProtectedRoute requireSuperAdmin={true}>
-      <SuperAdminContent />
+    <ProtectedRoute>
+      <AdminContent />
     </ProtectedRoute>
   );
 }

@@ -66,13 +66,42 @@ export default function PerfilPage() {
     }
   };
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <ProtectedRoute>
         <div className="p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando perfil...</p>
+            <p className="text-gray-600">Cargando usuario...</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  // Si el usuario existe pero no hay perfil, mostrar un estado de error o crear perfil
+  if (!profile) {
+    return (
+      <ProtectedRoute>
+        <div className="p-8">
+          <div className="text-center">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Perfil no encontrado</h3>
+              <p className="text-yellow-600 mb-4">
+                Tu perfil no está configurado correctamente. Esto puede deberse a un problema en el sistema.
+              </p>
+              <div className="space-y-2 text-sm text-yellow-700">
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>ID:</strong> {user.id}</p>
+                <p><strong>Creado:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <Link 
+              href="/auth/login" 
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Volver al inicio de sesión
+            </Link>
           </div>
         </div>
       </ProtectedRoute>
