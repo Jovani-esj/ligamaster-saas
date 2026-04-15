@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import Navigation from "@/components/Navigation";
-import { AuthenticationProvider } from "@/components/auth/AuthenticationSystem";
+import SimpleNavigation from "@/components/SimpleNavigation";
+import { SimpleAuthProvider } from "@/components/auth/SimpleAuthenticationSystem";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +31,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthenticationProvider>
-          <Navigation />
+        <SimpleAuthProvider>
+          <SimpleNavigation />
           <main className="flex-1">{children}</main>
           <Toaster />
-        </AuthenticationProvider>
+        </SimpleAuthProvider>
       </body>
     </html>
   );

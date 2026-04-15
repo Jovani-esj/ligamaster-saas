@@ -28,7 +28,7 @@ export async function getLigas(userId?: string): Promise<Liga[]> {
   
   if (userId) {
     // Si se proporciona userId, obtener ligas donde el usuario es owner o tiene perfil
-    query = query.or(`owner_id.eq.${userId},id.in.(SELECT liga_id FROM user_profiles WHERE user_id = ${userId})`);
+    query = query.or(`owner_id.eq.${userId},id.in.(SELECT liga_id FROM user_profiles WHERE user_id.eq.${userId})`);
   }
   
   const { data, error } = await query.order('fecha_registro', { ascending: false });

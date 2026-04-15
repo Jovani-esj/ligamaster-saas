@@ -49,12 +49,16 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
   // Funciones definidas antes del useEffect
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching profile for userId:', userId);
+      
       // Primero intentar obtener un solo perfil
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
+
+      console.log('Fetch result:', { data, error });
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -90,6 +94,7 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
         return null;
       }
 
+      console.log('Profile found:', data);
       setProfile(data);
       return data;
     } catch (error) {
@@ -100,24 +105,46 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
 
   const createOAuthUserProfile = useCallback(async (user: User) => {
     try {
+      console.log('Creating OAuth profile for user:', user.id);
+      
       // Extraer nombre del metadata o user_metadata
       const fullName = user.user_metadata?.full_name || user.user_metadata?.name || '';
       const nombre = fullName.split(' ')[0] || '';
       const apellido = fullName.split(' ').slice(1).join(' ') || '';
       
-      const { error } = await supabase
+      const profileData = {
+        user_id: user.id,
+        nombre: nombre,
+        apellido: apellido,
+        telefono: null,
+        fecha_nacimiento: null,
+        rol: 'usuario',
+        liga_id: null,
+      };
+      
+      console.log('Inserting profile data:', profileData);
+      
+      const { data, error } = await supabase
         .from('user_profiles')
-        .insert([{
-          user_id: user.id,
-          nombre: nombre,
-          apellido: apellido,
-          telefono: null,
-          fecha_nacimiento: null,
-          rol: 'usuario',
-          liga_id: null,
-        }]);
+        .insert([profileData]);
+
+      console.log('Insert result:', { data, error });
 
       if (error) {
+        console.log('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Si el error es por duplicado (perfil ya existe), intentar obtenerlo
+        if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('unique')) {
+          console.log('Profile already exists, fetching existing profile...');
+          await fetchUserProfile(user.id);
+          return true;
+        }
+        
         console.error('Error creating OAuth user profile:', error);
         return false;
       }
@@ -126,7 +153,7 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
       await fetchUserProfile(user.id);
       return true;
     } catch (error) {
-      console.error('Error creating OAuth user profile:', error);
+      console.error('Error creating OAuth user profile (catch):', error);
       return false;
     }
   }, [fetchUserProfile]);
@@ -154,17 +181,26 @@ export function AuthenticationProvider({ children }: { children: React.ReactNode
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', { event, session: session ? 'exists' : 'null' });
+        
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          console.log('User authenticated, fetching profile...');
           const userProfile = await fetchUserProfile(session.user.id);
+          
+          console.log('Profile fetch result:', userProfile);
           
           // Crear perfil automáticamente si no existe (para usuarios OAuth)
           if (!userProfile) {
+            console.log('No profile found, creating OAuth profile...');
             await createOAuthUserProfile(session.user);
+          } else {
+            console.log('Profile found and set successfully');
           }
         } else {
+          console.log('No session, clearing profile');
           setProfile(null);
         }
         setLoading(false);
