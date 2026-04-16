@@ -15,12 +15,12 @@ import {
   Target
 } from 'lucide-react';
 
-import { UserProfile, PermisosRol } from '@/types/database';
-import { SimpleUser } from '@/components/auth/SimpleAuthenticationSystem';
+import { PermisosRol } from '@/types/database';
+import { SimpleUser, SimpleProfile } from '@/components/auth/SimpleAuthenticationSystem';
 
 interface CapitanDashboardProps {
   user: SimpleUser | null;
-  profile: UserProfile | null;
+  profile: SimpleProfile | null;
   permisos: PermisosRol | null;
 }
 

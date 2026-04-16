@@ -13,10 +13,11 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-import { UserProfile, PermisosRol } from '@/types/database';
+import { PermisosRol } from '@/types/database';
+import { SimpleProfile } from '@/components/auth/SimpleAuthenticationSystem';
 
 interface AdminAdminDashboardProps {
-  profile: UserProfile | null;
+  profile: SimpleProfile | null;
   permisos: PermisosRol | null;
 }
 

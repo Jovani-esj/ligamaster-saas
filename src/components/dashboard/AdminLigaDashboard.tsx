@@ -16,11 +16,11 @@ import {
   MapPin,
   Clock
 } from 'lucide-react';
-import { EstadisticasLiga, Liga, Equipo, Partido } from '@/types/database';
-import { UserProfile, PermisosRol } from '@/types/database';
+import { EstadisticasLiga, Liga, Equipo, Partido, PermisosRol } from '@/types/database';
+import { SimpleProfile } from '@/components/auth/SimpleAuthenticationSystem';
 
 interface AdminLigaDashboardProps {
-  profile: UserProfile | null;
+  profile: SimpleProfile | null;
   permisos: PermisosRol | null;
 }
 

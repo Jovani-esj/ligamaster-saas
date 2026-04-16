@@ -1,11 +1,9 @@
-import { UserProfile, PermisosRol, EstadisticasLiga, Liga, Equipo, Partido } from './database';
+import { PermisosRol, EstadisticasLiga, Liga, Equipo, Partido } from './database';
+import type { SimpleUser, SimpleProfile } from '@/components/auth/SimpleAuthenticationSystem';
 
 export interface DashboardProps {
-  user: {
-    id: string;
-    email: string;
-  } | null;
-  profile: UserProfile | null;
+  user: SimpleUser | null;
+  profile: SimpleProfile | null;
   permisos: PermisosRol | null;
 }
 

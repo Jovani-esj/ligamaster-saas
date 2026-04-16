@@ -15,9 +15,9 @@ import {
   Database,
   Globe
 } from 'lucide-react';
-import type { EstadisticasGlobales, ActividadReciente } from '@/types/dashboard';
+import type { EstadisticasGlobales, ActividadReciente, DashboardProps } from '@/types/dashboard';
 
-export default function SuperAdminDashboard() {
+export default function SuperAdminDashboard(_props: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState<EstadisticasGlobales | null>(null);
   const [actividadReciente, setActividadReciente] = useState<ActividadReciente[]>([]);

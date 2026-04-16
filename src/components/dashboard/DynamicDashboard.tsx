@@ -1,6 +1,6 @@
 'use client';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
-import { PERMISOS_POR_ROL, RolUsuario, UserProfile } from '@/types/database';
+import { PERMISOS_POR_ROL, RolUsuario } from '@/types/database';
 import { Shield } from 'lucide-react';
 
 // Componentes específicos para cada rol
@@ -29,11 +29,11 @@ export default function DynamicDashboard() {
   // Renderizar dashboard según el rol
   switch (profile.rol as RolUsuario) {
     case 'superadmin':
-      return <SuperAdminDashboard user={user} profile={profile as UserProfile} permisos={permisos} />;
+      return <SuperAdminDashboard user={user} profile={profile} permisos={permisos} />;
     case 'adminadmin':
-      return <AdminAdminDashboard profile={profile as UserProfile} permisos={permisos} />;
+      return <AdminAdminDashboard profile={profile} permisos={permisos} />;
     case 'admin_liga':
-      return <AdminLigaDashboard profile={profile as UserProfile} permisos={permisos} />;
+      return <AdminLigaDashboard profile={profile} permisos={permisos} />;
     case 'capitan_equipo':
       return <CapitanDashboard user={user} profile={profile} permisos={permisos} />;
     case 'usuario':
