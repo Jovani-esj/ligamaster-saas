@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,13 @@ import {
   Target
 } from 'lucide-react';
 
+import { UserProfile, PermisosRol } from '@/types/database';
+import { SimpleUser } from '@/components/auth/SimpleAuthenticationSystem';
+
 interface CapitanDashboardProps {
-  user: any;
-  profile: any;
-  permisos: any;
+  user: SimpleUser | null;
+  profile: UserProfile | null;
+  permisos: PermisosRol | null;
 }
 
 interface Equipo {
@@ -63,13 +66,7 @@ export default function CapitanDashboard({ profile, permisos }: CapitanDashboard
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [proximosPartidos, setProximosPartidos] = useState<Partido[]>([]);
 
-  useEffect(() => {
-    if (profile?.equipo_id) {
-      cargarDatosEquipo();
-    }
-  }, [profile?.equipo_id, cargarDatosEquipo]);
-
-  const cargarDatosEquipo = async () => {
+  const cargarDatosEquipo = useCallback(async () => {
     if (!profile?.equipo_id) return;
 
     try {
@@ -119,7 +116,13 @@ export default function CapitanDashboard({ profile, permisos }: CapitanDashboard
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile?.equipo_id]);
+
+  useEffect(() => {
+    if (profile?.equipo_id) {
+      cargarDatosEquipo();
+    }
+  }, [profile?.equipo_id, cargarDatosEquipo]);
 
   if (loading) {
     return (

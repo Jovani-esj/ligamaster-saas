@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ProtectedRoute } from '@/components/auth/AuthenticationSystem';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import RouteProtection from '@/components/auth/RouteProtection';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { User, Phone, Calendar, Shield, Trophy, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PerfilPage() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile } = useSimpleAuth();
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -37,12 +37,13 @@ export default function PerfilPage() {
     setLoading(true);
 
     try {
-      const success = await updateProfile(formData);
-      if (success) {
-        setIsEditing(false);
-      }
+      // updateProfile not implemented in SimpleAuth - would need API call
+      // const success = await updateProfile(formData);
+      // For now, just simulate success
+      setIsEditing(false);
+      alert('Función de actualización no implementada en sistema simple');
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error actualizando perfil:', error);
     } finally {
       setLoading(false);
     }
@@ -68,21 +69,21 @@ export default function PerfilPage() {
 
   if (!user) {
     return (
-      <ProtectedRoute>
+      <RouteProtection>
         <div className="p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando usuario...</p>
           </div>
         </div>
-      </ProtectedRoute>
+      </RouteProtection>
     );
   }
 
   // Si el usuario existe pero no hay perfil, mostrar un estado de error o crear perfil
   if (!profile) {
     return (
-      <ProtectedRoute>
+      <RouteProtection>
         <div className="p-8">
           <div className="text-center">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
@@ -93,7 +94,7 @@ export default function PerfilPage() {
               <div className="space-y-2 text-sm text-yellow-700">
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>ID:</strong> {user.id}</p>
-                <p><strong>Creado:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
+                <p><strong>Creado:</strong> N/A</p>
               </div>
             </div>
             <Link 
@@ -104,12 +105,12 @@ export default function PerfilPage() {
             </Link>
           </div>
         </div>
-      </ProtectedRoute>
+      </RouteProtection>
     );
   }
 
   return (
-    <ProtectedRoute>
+    <RouteProtection>
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -149,7 +150,7 @@ export default function PerfilPage() {
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span>Miembro desde: {new Date(user.created_at).toLocaleDateString()}</span>
+                      <span>Miembro desde: {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -355,6 +356,6 @@ export default function PerfilPage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+    </RouteProtection>
   );
 }

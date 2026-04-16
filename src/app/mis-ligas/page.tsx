@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ProtectedRoute } from '@/components/auth/AuthenticationSystem';
+import RouteProtection from '@/components/auth/RouteProtection';
 import { Trophy, Users, Calendar, DollarSign, AlertCircle, CheckCircle, Settings } from 'lucide-react';
 import Link from 'next/link';
 
@@ -92,19 +92,19 @@ export default function MisLigasPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute>
+      <RouteProtection requireAuth={true}>
         <div className="p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando tus ligas...</p>
           </div>
         </div>
-      </ProtectedRoute>
+      </RouteProtection>
     );
   }
 
   return (
-    <ProtectedRoute>
+    <RouteProtection requireAuth={true}>
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
@@ -243,6 +243,6 @@ export default function MisLigasPage() {
           )}
         </div>
       </div>
-    </ProtectedRoute>
+    </RouteProtection>
   );
 }

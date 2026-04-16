@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 // Tipos
-interface SimpleUser {
+export interface SimpleUser {
   id: string;
   email: string;
   nombre: string;
@@ -11,7 +11,7 @@ interface SimpleUser {
   rol: string;
 }
 
-interface SimpleProfile {
+export interface SimpleProfile {
   id: string;
   user_id: string;
   nombre: string;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, User, Calendar, Phone, Trophy } from 'lucide-react';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 
 export default function SignUpPage() {
@@ -21,7 +21,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const { signUp, signInWithFacebook, signInWithGoogle } = useAuth();
+  const { signUp } = useSimpleAuth();
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -51,13 +51,7 @@ export default function SignUpPage() {
     setLoading(true);
     
     try {
-      const success = await signUp(formData.email, formData.password, {
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        telefono: formData.telefono,
-        fecha_nacimiento: formData.fecha_nacimiento,
-        rol: formData.rol
-      });
+      const success = await signUp(formData.email, formData.password, formData.nombre, formData.apellido);
 
       if (success) {
         router.push('/auth/login');
@@ -364,12 +358,8 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  setLoading(true);
-                  const success = await signInWithFacebook();
-                  if (success) {
-                    // OAuth redirect will handle navigation
-                  }
-                  setLoading(false);
+                  // Facebook OAuth not implemented in SimpleAuth
+                  toast.error('Función no disponible actualmente');
                 }}
                 disabled={loading}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -383,12 +373,8 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  setLoading(true);
-                  const success = await signInWithGoogle();
-                  if (success) {
-                    // OAuth redirect will handle navigation
-                  }
-                  setLoading(false);
+                  // Google OAuth not implemented in SimpleAuth
+                  toast.error('Función no disponible actualmente');
                 }}
                 disabled={loading}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
