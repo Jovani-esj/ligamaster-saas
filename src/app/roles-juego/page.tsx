@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +16,12 @@ import {
   Trophy,
   Filter,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Settings,
+  LogIn,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 interface Liga {
@@ -58,6 +65,7 @@ interface Partido {
 }
 
 export default function RolesJuegoPublicos() {
+  const { user, profile, loading: authLoading } = useSimpleAuth();
   const [loading, setLoading] = useState(true);
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [partidos, setPartidos] = useState<Partido[]>([]);
@@ -67,11 +75,18 @@ export default function RolesJuegoPublicos() {
   const [partidosPorPagina] = useState(10);
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [vistaCalendario, setVistaCalendario] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  const isAuthenticated = !!user;
+  const userRole = profile?.rol;
+  const isAdmin = userRole === 'superadmin' || userRole === 'adminadmin';
+  const isLigaAdmin = userRole === 'admin_liga';
+  const isCapitan = userRole === 'capitan_equipo';
 
   useEffect(() => {
     cargarLigas();
     cargarPartidos();
-  }, []);
+  }, [isAuthenticated]);
 
   const cargarLigas = async () => {
     try {
@@ -206,11 +221,34 @@ export default function RolesJuegoPublicos() {
     }
   };
 
-  if (loading) {
+  const puedeGestionarPartido = (partido: Partido) => {
+    if (isAdmin) return true;
+    if (isLigaAdmin && partido.liga_id === profile?.liga_id) return true;
+    return false;
+  };
+
+  const eliminarPartido = async (partidoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('partidos')
+        .delete()
+        .eq('id', partidoId);
+
+      if (error) throw error;
+      
+      setPartidos(prev => prev.filter(p => p.id !== partidoId));
+      setShowDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error eliminando partido:', error);
+      alert('Error al eliminar el partido');
+    }
+  };
+
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Cargando partidos...</p>
         </div>
       </div>
@@ -220,12 +258,65 @@ export default function RolesJuegoPublicos() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Header con bienvenida si está autenticado */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Roles de Juego</h1>
-          <p className="text-gray-600 text-lg">
-            Consulta los partidos programados de todas las ligas activas
-          </p>
+          {isAuthenticated ? (
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  ¡Hola, {profile?.nombre || user?.email}!
+                </h1>
+                <p className="text-gray-600">
+                  {isAdmin 
+                    ? 'Gestión de roles de juego - Vista administrador' 
+                    : isLigaAdmin 
+                      ? 'Gestiona los partidos de tu liga'
+                      : isCapitan
+                        ? 'Consulta los partidos de tu equipo'
+                        : 'Consulta los partidos programados de todas las ligas'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {(isAdmin || isLigaAdmin) && (
+                  <Link href="/admin/programacion-partidos">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Crear Partido
+                    </Button>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin">
+                    <Button variant="outline">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Panel Admin
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Roles de Juego</h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
+                Consulta los partidos programados de todas las ligas activas
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link href="/auth/simple-login">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/auth/simple-register">
+                  <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Registrarse
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filtros */}
@@ -438,6 +529,26 @@ export default function RolesJuegoPublicos() {
                             <div className="mt-2 text-xs text-gray-500">
                               Liga: {partido.liga?.nombre_liga}
                             </div>
+
+                            {/* Botones de gestión para admins */}
+                            {puedeGestionarPartido(partido) && (
+                              <div className="mt-3 flex gap-2 pt-3 border-t border-gray-100">
+                                <Link 
+                                  href={`/admin/programacion-partidos?edit=${partido.id}`}
+                                  className="flex-1 flex items-center justify-center space-x-1 bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm hover:bg-blue-200 transition-colors"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                  <span>Editar</span>
+                                </Link>
+                                <button 
+                                  onClick={() => setShowDeleteConfirm(partido.id)}
+                                  className="flex-1 flex items-center justify-center space-x-1 bg-red-100 text-red-700 px-3 py-1.5 rounded text-sm hover:bg-red-200 transition-colors"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Eliminar</span>
+                                </button>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -457,6 +568,9 @@ export default function RolesJuegoPublicos() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Cancha</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Jornada</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Estado</th>
+                      {(isAdmin || isLigaAdmin) && (
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Acciones</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -510,10 +624,68 @@ export default function RolesJuegoPublicos() {
                             {getEstadoTexto(partido.estado)}
                           </span>
                         </td>
+                        {(isAdmin || isLigaAdmin) && (
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              {puedeGestionarPartido(partido) && (
+                                <>
+                                  <Link 
+                                    href={`/admin/programacion-partidos?edit=${partido.id}`}
+                                    className="p-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                                    title="Editar"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Link>
+                                  <button 
+                                    onClick={() => setShowDeleteConfirm(partido.id)}
+                                    className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Diálogo de confirmación de eliminación */}
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="max-w-md w-full mx-4">
+                  <CardContent className="p-6">
+                    <div className="text-center mb-4">
+                      <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Trash2 className="w-6 h-6 text-red-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">¿Eliminar partido?</h3>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar este partido?
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setShowDeleteConfirm(null)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-red-600 hover:bg-red-700"
+                        onClick={() => eliminarPartido(showDeleteConfirm)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -547,6 +719,32 @@ export default function RolesJuegoPublicos() {
             )}
           </CardContent>
         </Card>
+
+        {/* CTA para usuarios no autenticados al final */}
+        {!isAuthenticated && partidosFiltrados.length > 0 && (
+          <div className="mt-12 text-center">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  ¿Eres administrador de una liga?
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Inicia sesión para crear y gestionar los partidos de tu liga
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Link href="/auth/simple-login">
+                    <Button variant="outline">Iniciar Sesión</Button>
+                  </Link>
+                  <Link href="/auth/simple-register">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      Crear Cuenta
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
