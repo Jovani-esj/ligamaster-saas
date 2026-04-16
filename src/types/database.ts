@@ -350,10 +350,10 @@ export const PERMISOS_POR_ROL: Record<RolUsuario, PermisosRol> = {
     puede_editar_configuracion: true,
   },
   admin_liga: {
-    puede_ver_ligas: false,
-    puede_crear_ligas: false,
+    puede_ver_ligas: true,
+    puede_crear_ligas: true,
     puede_editar_ligas: true,
-    puede_eliminar_ligas: false,
+    puede_eliminar_ligas: true,
     puede_ver_equipos: true,
     puede_crear_equipos: true,
     puede_editar_equipos: true,

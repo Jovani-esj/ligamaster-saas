@@ -33,7 +33,7 @@ export default function DynamicDashboard() {
     case 'adminadmin':
       return <AdminAdminDashboard profile={profile} permisos={permisos} />;
     case 'admin_liga':
-      return <AdminLigaDashboard profile={profile} permisos={permisos} />;
+      return <AdminLigaDashboard user={user} profile={profile} permisos={permisos} />;
     case 'capitan_equipo':
       return <CapitanDashboard user={user} profile={profile} permisos={permisos} />;
     case 'usuario':

@@ -140,21 +140,35 @@ export default function RoleBasedNavigation() {
       title: 'Administración de Liga',
       items: [
         {
-          href: '/canchas',
+          href: '/admin/crear-liga',
+          label: 'Crear Liga',
+          icon: Trophy,
+          roles: ['admin_liga'],
+          requiresAuth: true
+        },
+        {
+          href: '/admin/mis-ligas',
+          label: 'Mis Ligas',
+          icon: Shield,
+          roles: ['admin_liga'],
+          requiresAuth: true
+        },
+        {
+          href: '/admin/canchas',
           label: 'Canchas',
           icon: MapPin,
           roles: ['admin_liga'],
           requiresAuth: true
         },
         {
-          href: '/programacion-partidos',
+          href: '/admin/programacion-partidos',
           label: 'Programación',
           icon: Calendar,
           roles: ['admin_liga'],
           requiresAuth: true
         },
         {
-          href: '/aprobaciones',
+          href: '/admin/aprobaciones',
           label: 'Aprobaciones',
           icon: CheckCircle,
           roles: ['admin_liga'],
@@ -162,14 +176,7 @@ export default function RoleBasedNavigation() {
           badge: 'Pendientes'
         },
         {
-          href: '/estadisticas',
-          label: 'Estadísticas',
-          icon: TrendingUp,
-          roles: ['admin_liga'],
-          requiresAuth: true
-        },
-        {
-          href: '/pagos',
+          href: '/admin/pagos',
           label: 'Gestión de Pagos',
           icon: DollarSign,
           roles: ['admin_liga'],
