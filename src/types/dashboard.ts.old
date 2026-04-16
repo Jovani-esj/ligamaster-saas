@@ -1,0 +1,158 @@
+// Tipos comunes para los dashboards
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  nombre?: string;
+  apellido?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  rol: 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario';
+  liga_id?: string;
+  equipo_id?: string;
+  es_capitan_equipo: boolean;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Liga {
+  id: string;
+  descripcion: string;
+  nombre_liga: string;
+  slug: string;
+  owner_id?: string;
+  estatus_pago: boolean;
+  plan: 'Bronce' | 'Plata' | 'Oro';
+  fecha_registro: string;
+  fecha_vencimiento?: string;
+  activa: boolean;
+}
+
+export interface Equipo {
+  id: string;
+  liga_id: string;
+  nombre: string;
+  logo_url?: string;
+  color_primario: string;
+  color_secundario: string;
+  capitan_id?: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Jugador {
+  id: string;
+  equipo_id: string;
+  user_profile_id?: string;
+  nombre: string;
+  apellido?: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  numero_camiseta?: number;
+  posicion?: string;
+  foto_url?: string;
+  activo: boolean;
+  es_capitan: boolean;
+  fecha_registro: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Partido {
+  id: string;
+  liga_id: string;
+  torneo_id: string;
+  equipo_local_id?: string;
+  equipo_visitante_id?: string;
+  marcador_local: number;
+  marcador_visitante: number;
+  fecha_jornada?: string;
+  estado: 'programado' | 'jugado' | 'cancelado';
+  cancha_id?: string;
+  duracion_minutos: number;
+  jornada?: number;
+  observaciones?: string;
+  creado_por?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Cancha {
+  id: string;
+  liga_id: string;
+  nombre: string;
+  direccion?: string;
+  tipo: string;
+  superficie: string;
+  capacidad_espectadores: number;
+  tiene_iluminacion: boolean;
+  tiene_vestuarios: boolean;
+  precio_hora: number;
+  activa: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EstadisticasGlobales {
+  total_ligas: number;
+  ligas_activas: number;
+  ligas_pagadas: number;
+  total_usuarios: number;
+  total_equipos: number;
+  total_jugadores: number;
+  ingresos_mensuales: number;
+  total_superadmins: number;
+  total_admins: number;
+}
+
+export interface EstadisticasLiga {
+  total_equipos: number;
+  total_jugadores: number;
+  total_partidos: number;
+  partidos_jugados: number;
+  proximos_partidos: number;
+  canchas_disponibles: number;
+}
+
+export interface ActividadReciente {
+  id: string;
+  nombre_liga: string;
+  created_at: string;
+  owner_id?: string;
+}
+
+export interface DashboardProps {
+  user: UserProfile;
+  profile: UserProfile;
+  permisos: {
+    puede_ver_ligas: boolean;
+    puede_crear_ligas: boolean;
+    puede_editar_ligas: boolean;
+    puede_eliminar_ligas: boolean;
+    puede_ver_equipos: boolean;
+    puede_crear_equipos: boolean;
+    puede_editar_equipos: boolean;
+    puede_eliminar_equipos: boolean;
+    puede_ver_jugadores: boolean;
+    puede_crear_jugadores: boolean;
+    puede_editar_jugadores: boolean;
+    puede_eliminar_jugadores: boolean;
+    puede_ver_torneos: boolean;
+    puede_crear_torneos: boolean;
+    puede_editar_torneos: boolean;
+    puede_eliminar_torneos: boolean;
+    puede_ver_partidos: boolean;
+    puede_crear_partidos: boolean;
+    puede_editar_partidos: boolean;
+    puede_eliminar_partidos: boolean;
+    puede_ver_canchas: boolean;
+    puede_crear_canchas: boolean;
+    puede_editar_canchas: boolean;
+    puede_eliminar_canchas: boolean;
+    puede_ver_configuracion: boolean;
+    puede_editar_configuracion: boolean;
+  };
+}

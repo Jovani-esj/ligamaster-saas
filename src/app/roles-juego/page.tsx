@@ -91,28 +91,62 @@ export default function RolesJuegoPublicos() {
 
   const cargarPartidos = async () => {
     try {
-      const { data, error } = await supabase
+      // First try a simple query to get basic partidos data
+      const { data: partidosData, error: partidosError } = await supabase
         .from('partidos')
-        .select(`
-          *,
-          equipo_local:equipos!partidos_equipo_local_id_fkey(nombre, liga_id),
-          equipo_visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, liga_id),
-          cancha:canchas(nombre, direccion, tipo, superficie),
-          liga:ligas!partidos_liga_id_fkey(nombre_liga, slug, activa, estatus_pago)
-        `)
-        .in('estado', ['programado', 'en_juego', 'finalizado'])
-        .order('fecha_hora', { ascending: true });
+        .select('*')
+        .in('estado', ['programado', 'jugado', 'finalizado'])
+        .order('fecha_hora', { ascending: true })
+        .limit(50);
 
-      if (error) throw error;
-      
-      // Filtrar solo partidos de ligas activas y con pago al día
-      const partidosFiltrados = (data || []).filter(partido => 
-        partido.liga?.activa && partido.liga?.estatus_pago
-      );
-      
-      setPartidos(partidosFiltrados);
+      if (partidosError) {
+        console.error('Error en query simple de partidos:', partidosError);
+        throw partidosError;
+      }
+
+      // If we have partidos, try to get related data
+      if (partidosData && partidosData.length > 0) {
+        const partidosConRelaciones = await Promise.all(
+          partidosData.map(async (partido) => {
+            try {
+              // Get related data separately to avoid complex joins
+              const [equipoLocalRes, equipoVisitanteRes, ligaRes] = await Promise.all([
+                partido.equipo_local_id ? supabase.from('equipos').select('nombre, liga_id').eq('id', partido.equipo_local_id).single() : Promise.resolve({ data: null, error: null }),
+                partido.equipo_visitante_id ? supabase.from('equipos').select('nombre, liga_id').eq('id', partido.equipo_visitante_id).single() : Promise.resolve({ data: null, error: null }),
+                supabase.from('ligas').select('nombre_liga, slug, activa, estatus_pago').eq('id', partido.liga_id).single()
+              ]);
+
+              return {
+                ...partido,
+                equipo_local: equipoLocalRes.data,
+                equipo_visitante: equipoVisitanteRes.data,
+                liga: ligaRes.data
+              };
+            } catch (err) {
+              console.error('Error getting relations for partido:', partido.id, err);
+              return {
+                ...partido,
+                equipo_local: null,
+                equipo_visitante: null,
+                liga: null
+              };
+            }
+          })
+        );
+
+        // Filter only active leagues with payment status
+        const partidosFiltrados = partidosConRelaciones.filter(partido => 
+          partido.liga?.activa !== false && partido.liga?.estatus_pago !== false
+        );
+        
+        setPartidos(partidosFiltrados);
+      } else {
+        setPartidos([]);
+      }
     } catch (error) {
       console.error('Error cargando partidos:', error);
+      // Set empty array to prevent infinite loading
+      setPartidos([]);
     } finally {
       setLoading(false);
     }

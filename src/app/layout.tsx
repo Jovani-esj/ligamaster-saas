@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import SimpleNavigation from "@/components/SimpleNavigation";
+import RoleBasedNavigation from "@/components/RoleBasedNavigation";
 import { SimpleAuthProvider } from "@/components/auth/SimpleAuthenticationSystem";
 import LeagueVerificationProvider from "@/components/LeagueVerificationProvider";
 
@@ -34,7 +34,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SimpleAuthProvider>
           <LeagueVerificationProvider>
-            <SimpleNavigation />
+            <RoleBasedNavigation />
             <main className="flex-1">{children}</main>
             <Toaster />
           </LeagueVerificationProvider>
