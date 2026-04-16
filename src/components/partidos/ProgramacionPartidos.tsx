@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,7 +62,7 @@ interface Partido {
 }
 
 export default function ProgramacionPartidos() {
-  const { user, profile, isAdminLiga, isAdminAdmin } = useAuth();
+  const { user, profile, isAdminLiga, isAdminAdmin } = useSimpleAuth();
   const [loading, setLoading] = useState(true);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [canchas, setCanchas] = useState<Cancha[]>([]);

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ interface Jugador {
 }
 
 export default function GestionEquipos() {
-  const { user, profile, isCapitanEquipo, isAdminLiga } = useAuth();
+  const { user, profile, isCapitanEquipo, isAdminLiga } = useSimpleAuth();
   const [loading, setLoading] = useState(true);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [jugadores, setJugadores] = useState<Jugador[]>([]);

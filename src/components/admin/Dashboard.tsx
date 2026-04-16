@@ -23,7 +23,7 @@ import {
   getEstadisticasLiga,
   getEstadisticasEquipo
 } from '@/lib/database';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { profile, user } = useAuth();
+  const { profile, user } = useSimpleAuth();
   const [loading, setLoading] = useState(true);
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [equipos, setEquipos] = useState<Equipo[]>([]);

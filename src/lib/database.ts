@@ -19,6 +19,31 @@ import {
   CreateConfiguracionTemporadaData
 } from '@/types/database';
 
+// Interfaz local para usuarios_simple (tabla principal de usuarios)
+export interface UsuarioSimple {
+  id: string;
+  email: string;
+  password: string;
+  nombre: string;
+  apellido?: string;
+  rol: 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario';
+  activo: boolean;
+  liga_id?: string;
+  equipo_id?: string;
+  es_capitan_equipo: boolean;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  created_at: string;
+  updated_at: string;
+  // Relaciones
+  equipo?: {
+    id: string;
+    nombre: string;
+    logo_url?: string;
+    activo: boolean;
+  };
+}
+
 // ========================================
 // LIGAS
 // ========================================
@@ -486,6 +511,163 @@ export async function createUserProfile(data: Partial<UserProfile>): Promise<Use
 }
 
 // ========================================
+// SOLICITUDES DE EQUIPOS
+// ========================================
+
+import { 
+  SolicitudEquipo, 
+  SolicitudEquipoConDetalles,
+  CreateSolicitudEquipoData,
+  LigaDisponible
+} from '@/types/database';
+
+export async function getSolicitudesPorLiga(liga_id: string): Promise<SolicitudEquipoConDetalles[]> {
+  // Paso 1: Obtener solicitudes
+  const { data: solicitudes, error: errorSolicitudes } = await supabase
+    .from('solicitudes_equipos')
+    .select('*')
+    .eq('liga_id', liga_id)
+    .order('created_at', { ascending: false });
+    
+  if (errorSolicitudes) throw errorSolicitudes;
+  if (!solicitudes || solicitudes.length === 0) return [];
+
+  // Paso 2: Obtener datos de capitanes
+  const capitanIds = solicitudes.map(s => s.capitan_id).filter(Boolean);
+  const { data: capitanes, error: errorCapitanes } = await supabase
+    .from('usuarios_simple')
+    .select('id, nombre, apellido, rol')
+    .in('id', capitanIds);
+
+  if (errorCapitanes) console.error('Error obteniendo capitanes:', errorCapitanes);
+
+  // Paso 3: Combinar datos
+  const capitanesMap = new Map(capitanes?.map(c => [c.id, c]) || []);
+  
+  return solicitudes.map(solicitud => ({
+    ...solicitud,
+    capitan: capitanesMap.get(solicitud.capitan_id) || undefined,
+  }));
+}
+
+export async function getSolicitudesPorCapitan(capitan_id: string): Promise<SolicitudEquipoConDetalles[]> {
+  const { data, error } = await supabase
+    .from('solicitudes_equipos')
+    .select('*')
+    .eq('capitan_id', capitan_id)
+    .order('created_at', { ascending: false });
+    
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createSolicitudEquipo(
+  data: CreateSolicitudEquipoData, 
+  capitan_id: string
+): Promise<SolicitudEquipo> {
+  const { data: solicitud, error } = await supabase
+    .from('solicitudes_equipos')
+    .insert([{
+      ...data,
+      capitan_id,
+      estado: 'pendiente',
+    }])
+    .select()
+    .single();
+    
+  if (error) throw error;
+  return solicitud;
+}
+
+export async function aprobarSolicitudEquipo(
+  solicitud_id: string, 
+  liga_id: string, 
+  respuesta?: string
+): Promise<{ solicitud: SolicitudEquipo; equipo: Equipo }> {
+  // Primero obtener la solicitud
+  const { data: solicitud, error: errorSolicitud } = await supabase
+    .from('solicitudes_equipos')
+    .select('*')
+    .eq('id', solicitud_id)
+    .single();
+    
+  if (errorSolicitud) throw errorSolicitud;
+  
+  // Crear el equipo
+  const { data: equipo, error: errorEquipo } = await supabase
+    .from('equipos')
+    .insert([{
+      liga_id,
+      nombre: solicitud.nombre_equipo,
+      logo_url: solicitud.logo_url,
+      color_primario: '#000000',
+      color_secundario: '#FFFFFF',
+      capitan_id: solicitud.capitan_id,
+      activo: true,
+    }])
+    .select()
+    .single();
+    
+  if (errorEquipo) throw errorEquipo;
+  
+  // Actualizar la solicitud
+  const { data: solicitudActualizada, error: errorUpdate } = await supabase
+    .from('solicitudes_equipos')
+    .update({
+      estado: 'aprobada',
+      equipo_id: equipo.id,
+      respuesta_admin: respuesta,
+    })
+    .eq('id', solicitud_id)
+    .select()
+    .single();
+    
+  if (errorUpdate) throw errorUpdate;
+  
+  // Actualizar el usuario capitán en usuarios_simple
+  await supabase
+    .from('usuarios_simple')
+    .update({
+      equipo_id: equipo.id,
+      liga_id: liga_id,
+      es_capitan_equipo: true,
+      rol: 'capitan_equipo',
+    })
+    .eq('id', solicitud.capitan_id);
+  
+  return { solicitud: solicitudActualizada, equipo };
+}
+
+export async function rechazarSolicitudEquipo(
+  solicitud_id: string, 
+  respuesta: string
+): Promise<SolicitudEquipo> {
+  const { data, error } = await supabase
+    .from('solicitudes_equipos')
+    .update({
+      estado: 'rechazada',
+      respuesta_admin: respuesta,
+    })
+    .eq('id', solicitud_id)
+    .select()
+    .single();
+    
+  if (error) throw error;
+  return data;
+}
+
+export async function getLigasDisponibles(): Promise<LigaDisponible[]> {
+  const { data, error } = await supabase
+    .from('ligas')
+    .select('id, nombre_liga, slug, descripcion, plan')
+    .eq('activa', true)
+    .order('nombre_liga');
+    
+  if (error) throw error;
+  return (data as LigaDisponible[]) || [];
+}
+
+// ========================================
 // ESTADÍSTICAS
 // ========================================
 
@@ -554,4 +736,402 @@ export async function getEstadisticasEquipo(equipo_id: string): Promise<Estadist
     goles_contra: golesContra,
     puntos: partidosGanados * 3 + partidosEmpatados,
   };
+}
+
+// ========================================
+// INVITACIONES A CAPITANES (ADMIN INVITA)
+// ========================================
+
+import {
+  InvitacionCapitan,
+  InvitacionCapitanConDetalles,
+  CreateInvitacionCapitanData,
+} from '@/types/database';
+
+// Generar token único para invitación
+function generarTokenInvitacion(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
+// Crear invitación a capitan (admin envía invitación)
+export async function crearInvitacionCapitan(
+  data: CreateInvitacionCapitanData
+): Promise<InvitacionCapitan> {
+  const token = generarTokenInvitacion();
+  const fechaExpiracion = new Date();
+  fechaExpiracion.setDate(fechaExpiracion.getDate() + 7); // Expira en 7 días
+
+  const { data: invitacion, error } = await supabase
+    .from('invitaciones_capitanes')
+    .insert([{
+      ...data,
+      token,
+      estado: 'pendiente',
+      fecha_expiracion: fechaExpiracion.toISOString(),
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    if (error.message.includes('unique constraint')) {
+      throw new Error('Ya existe una invitación pendiente para este email en esta liga');
+    }
+    throw error;
+  }
+
+  return invitacion;
+}
+
+// Obtener invitaciones por liga (para admin)
+export async function getInvitacionesPorLiga(liga_id: string): Promise<InvitacionCapitanConDetalles[]> {
+  const { data, error } = await supabase
+    .from('invitaciones_capitanes')
+    .select(`
+      *,
+      liga:liga_id (id, nombre_liga, slug),
+      capitan:capitan_id (id, nombre, apellido, email)
+    `)
+    .eq('liga_id', liga_id)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Obtener invitaciones por email (para capitan ver sus invitaciones)
+export async function getInvitacionesPorEmail(email: string): Promise<InvitacionCapitanConDetalles[]> {
+  const { data, error } = await supabase
+    .from('invitaciones_capitanes')
+    .select(`
+      *,
+      liga:liga_id (id, nombre_liga, slug, logo_url),
+      equipo:equipo_id (id, nombre, logo_url)
+    `)
+    .eq('email', email.toLowerCase())
+    .in('estado', ['pendiente', 'aceptada'])
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Aceptar invitación (capitan acepta unirse)
+export async function aceptarInvitacionCapitan(
+  invitacion_id: string,
+  token: string,
+  capitan_id: string,
+  nombreEquipo?: string
+): Promise<{ invitacion: InvitacionCapitan; equipo: Equipo }> {
+  // Verificar invitación
+  const { data: invitacion, error: errorInv } = await supabase
+    .from('invitaciones_capitanes')
+    .select('*')
+    .eq('id', invitacion_id)
+    .eq('token', token)
+    .eq('estado', 'pendiente')
+    .single();
+
+  if (errorInv || !invitacion) {
+    throw new Error('Invitación no válida o ya procesada');
+  }
+
+  // Verificar expiración
+  if (invitacion.fecha_expiracion && new Date(invitacion.fecha_expiracion) < new Date()) {
+    await supabase
+      .from('invitaciones_capitanes')
+      .update({ estado: 'expirada' })
+      .eq('id', invitacion_id);
+    throw new Error('La invitación ha expirado');
+  }
+
+  // Crear equipo
+  const { data: equipo, error: errorEquipo } = await supabase
+    .from('equipos')
+    .insert([{
+      liga_id: invitacion.liga_id,
+      nombre: nombreEquipo || invitacion.nombre_equipo || `Equipo de ${invitacion.nombre || 'Capitán'}`,
+      logo_url: invitacion.equipo_id ? undefined : undefined,
+      color_primario: '#000000',
+      color_secundario: '#FFFFFF',
+      capitan_id: capitan_id,
+      activo: true,
+    }])
+    .select()
+    .single();
+
+  if (errorEquipo) throw errorEquipo;
+
+  // Actualizar invitación
+  const { data: invitacionActualizada, error: errorUpdate } = await supabase
+    .from('invitaciones_capitanes')
+    .update({
+      estado: 'aceptada',
+      capitan_id: capitan_id,
+      equipo_id: equipo.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', invitacion_id)
+    .select()
+    .single();
+
+  if (errorUpdate) throw errorUpdate;
+
+  // Actualizar usuario capitan en usuarios_simple
+  await supabase
+    .from('usuarios_simple')
+    .update({
+      equipo_id: equipo.id,
+      liga_id: invitacion.liga_id,
+      es_capitan_equipo: true,
+      rol: 'capitan_equipo',
+    })
+    .eq('id', capitan_id);
+
+  return { invitacion: invitacionActualizada, equipo };
+}
+
+// Rechazar invitación
+export async function rechazarInvitacionCapitan(
+  invitacion_id: string,
+  respuesta: string
+): Promise<InvitacionCapitan> {
+  const { data, error } = await supabase
+    .from('invitaciones_capitanes')
+    .update({
+      estado: 'rechazada',
+      respuesta,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', invitacion_id)
+    .eq('estado', 'pendiente')
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Cancelar invitación (admin cancela)
+export async function cancelarInvitacionCapitan(invitacion_id: string): Promise<void> {
+  const { error } = await supabase
+    .from('invitaciones_capitanes')
+    .delete()
+    .eq('id', invitacion_id)
+    .eq('estado', 'pendiente');
+
+  if (error) throw error;
+}
+
+// ========================================
+// GESTIÓN DE CAPITANES (PARA ADMIN)
+// ========================================
+
+// Obtener capitanes de una liga (solo usuarios_simple)
+export async function getCapitanesPorLiga(liga_id: string): Promise<Array<{id: string, nombre: string, apellido: string | null, email: string, telefono: string | null, equipo: {id: string, nombre: string, logo_url: string | null, activo: boolean} | null}>> {
+  console.log('Consultando capitanes para liga_id:', liga_id);
+  
+  // Primero verificar si hay usuarios con es_capitan_equipo en esta liga
+  const { data: rawData, error: rawError } = await supabase
+    .from('usuarios_simple')
+    .select('id, nombre, apellido, email, telefono, liga_id, equipo_id, es_capitan_equipo, rol')
+    .eq('liga_id', liga_id)
+    .eq('es_capitan_equipo', true);
+
+  if (rawError) {
+    console.error('Error en consulta simple de capitanes:', rawError);
+    console.error('Código:', rawError.code);
+    console.error('Mensaje:', rawError.message);
+    console.error('Detalles:', rawError.details);
+    throw new Error(`DB Error: ${rawError.message} (${rawError.code})`);
+  }
+
+  console.log('Capitanes encontrados (datos crudos):', rawData);
+  
+  if (!rawData || rawData.length === 0) {
+    return [];
+  }
+
+  // Si hay datos, obtener los equipos relacionados por separado
+  const equipoIds = rawData.filter(u => u.equipo_id).map(u => u.equipo_id);
+  
+  let equiposMap = new Map();
+  if (equipoIds.length > 0) {
+    const { data: equipos, error: equiposError } = await supabase
+      .from('equipos')
+      .select('id, nombre, logo_url, activo')
+      .in('id', equipoIds);
+    
+    if (equiposError) {
+      console.error('Error obteniendo equipos:', equiposError);
+    } else {
+      equiposMap = new Map(equipos?.map(e => [e.id, e]) || []);
+    }
+  }
+
+  // Combinar datos y mapear al tipo correcto
+  const capitanesConEquipo: Array<{id: string, nombre: string, apellido: string | null, email: string, telefono: string | null, equipo: {id: string, nombre: string, logo_url: string | null, activo: boolean} | null}> = rawData.map(capitan => {
+    const equipoFromMap = capitan.equipo_id ? equiposMap.get(capitan.equipo_id) : null;
+    const equipoFinal: {id: string, nombre: string, logo_url: string | null, activo: boolean} | null = equipoFromMap ?? null;
+    return {
+      id: capitan.id,
+      nombre: capitan.nombre,
+      apellido: capitan.apellido || null,
+      email: capitan.email,
+      telefono: capitan.telefono || null,
+      equipo: equipoFinal
+    };
+  });
+
+  console.log('Capitanes con equipo:', capitanesConEquipo);
+  return capitanesConEquipo;
+}
+
+// Crear usuario capitan directamente (admin crea cuenta)
+export async function crearCapitanDirecto(
+  liga_id: string,
+  datos: {
+    email: string;
+    nombre: string;
+    apellido?: string;
+    telefono?: string;
+    nombre_equipo: string;
+  }
+): Promise<{ user: UsuarioSimple; equipo: Equipo }> {
+  const password = generarPasswordTemporal();
+  
+  // Paso 1: Crear usuario en usuarios_simple
+  const { data: usuario, error: errorUsuario } = await supabase
+    .from('usuarios_simple')
+    .insert([{
+      email: datos.email.toLowerCase(),
+      password: password,
+      nombre: datos.nombre,
+      apellido: datos.apellido || '',
+      telefono: datos.telefono || null,
+      rol: 'capitan_equipo',
+      activo: true,
+      es_capitan_equipo: false, // Se actualizará después de crear el equipo
+    }])
+    .select()
+    .single();
+
+  if (errorUsuario) {
+    if (errorUsuario.message.includes('unique constraint')) {
+      throw new Error('Este email ya está registrado');
+    }
+    throw errorUsuario;
+  }
+
+  // Paso 2: Crear equipo
+  const { data: equipo, error: errorEquipo } = await supabase
+    .from('equipos')
+    .insert([{
+      liga_id: liga_id,
+      nombre: datos.nombre_equipo,
+      color_primario: '#000000',
+      color_secundario: '#FFFFFF',
+      capitan_id: usuario.id,
+      activo: true,
+    }])
+    .select()
+    .single();
+
+  if (errorEquipo) throw errorEquipo;
+
+  // Paso 3: Actualizar usuario con equipo y capitanía
+  const { data: usuarioActualizado, error: errorUpdate } = await supabase
+    .from('usuarios_simple')
+    .update({
+      liga_id: liga_id,
+      equipo_id: equipo.id,
+      es_capitan_equipo: true,
+    })
+    .eq('id', usuario.id)
+    .select()
+    .single();
+
+  if (errorUpdate) throw errorUpdate;
+
+  // TODO: Enviar email con contraseña temporal
+  console.log('Password temporal generado:', password);
+
+  return { user: usuarioActualizado, equipo };
+}
+
+// Generar password temporal
+function generarPasswordTemporal(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+// Revocar capitanía (convertir a usuario normal o eliminar del equipo)
+export async function revocarCapitan(
+  capitan_id: string,
+  mantenerEquipo: boolean = false
+): Promise<void> {
+  if (mantenerEquipo) {
+    // Solo quitar capitanía, mantener en equipo
+    await supabase
+      .from('usuarios_simple')
+      .update({
+        es_capitan_equipo: false,
+        rol: 'usuario',
+      })
+      .eq('id', capitan_id);
+  } else {
+    // Quitar de equipo y capitanía
+    await supabase
+      .from('usuarios_simple')
+      .update({
+        equipo_id: null,
+        liga_id: null,
+        es_capitan_equipo: false,
+        rol: 'usuario',
+      })
+      .eq('id', capitan_id);
+  }
+}
+
+// Asignar capitán existente a una liga (admin lo "reclama")
+export async function asignarCapitanALiga(
+  capitan_id: string,
+  liga_id: string
+): Promise<UsuarioSimple> {
+  const { data, error } = await supabase
+    .from('usuarios_simple')
+    .update({
+      liga_id: liga_id,
+      rol: 'capitan_equipo',
+      es_capitan_equipo: true,
+    })
+    .eq('id', capitan_id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error asignando capitán a liga:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+// Buscar capitanes sin liga asignada (para admin reclamar)
+export async function getCapitanesSinLiga(): Promise<Array<{id: string, nombre: string, apellido: string | null, email: string, rol: string, es_capitan_equipo: boolean, created_at: string}>> {
+  const { data, error } = await supabase
+    .from('usuarios_simple')
+    .select('id, nombre, apellido, email, rol, es_capitan_equipo, created_at')
+    .is('liga_id', null)
+    .eq('rol', 'capitan_equipo');
+
+  if (error) {
+    console.error('Error obteniendo capitanes sin liga:', error);
+    throw error;
+  }
+
+  return (data || []) as Array<{id: string, nombre: string, apellido: string | null, email: string, rol: string, es_capitan_equipo: boolean, created_at: string}>;
 }

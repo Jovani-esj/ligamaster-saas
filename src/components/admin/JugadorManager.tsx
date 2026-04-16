@@ -13,7 +13,7 @@ import {
   updateJugador, 
   deleteJugador 
 } from '@/lib/database';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,7 +40,7 @@ const POSICIONES = [
 ];
 
 export default function JugadorManager({ equipoId, equipoNombre }: JugadorManagerProps) {
-  const { profile } = useAuth();
+  const { profile } = useSimpleAuth();
   const [jugadores, setJugadores] = useState<Jugador[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);

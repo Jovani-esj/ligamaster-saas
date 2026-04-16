@@ -131,6 +131,15 @@ export interface EventoPartido {
   created_at: string;
 }
 
+// Tipo para ligas disponibles (solo campos básicos)
+export interface LigaDisponible {
+  id: string;
+  nombre_liga: string;
+  slug: string;
+  descripcion?: string;
+  plan?: 'Bronce' | 'Plata' | 'Oro';
+}
+
 // Tipos para relaciones y datos extendidos
 export interface EquipoConJugadores extends Equipo {
   jugadores: Jugador[];
@@ -258,6 +267,69 @@ export interface EstadisticasEquipo {
   goles_favor: number;
   goles_contra: number;
   puntos: number;
+}
+
+// Solicitudes de equipos para unirse a ligas
+export interface SolicitudEquipo {
+  id: string;
+  liga_id: string;
+  capitan_id: string;
+  equipo_id?: string;
+  nombre_equipo: string;
+  logo_url?: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  mensaje?: string;
+  respuesta_admin?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SolicitudEquipoConDetalles extends SolicitudEquipo {
+  liga?: Liga;
+  capitan?: UserProfile;
+  equipo?: Equipo;
+}
+
+// Tipos para formularios de solicitudes
+export interface CreateSolicitudEquipoData {
+  liga_id: string;
+  nombre_equipo: string;
+  logo_url?: string;
+  mensaje?: string;
+}
+
+// Invitaciones de liga a capitanes (admin invita a capitan)
+export interface InvitacionCapitan {
+  id: string;
+  liga_id: string;
+  email: string;
+  nombre?: string;
+  telefono?: string;
+  estado: 'pendiente' | 'aceptada' | 'rechazada' | 'expirada';
+  token: string;
+  capitan_id?: string;
+  equipo_id?: string;
+  nombre_equipo?: string;
+  mensaje?: string;
+  respuesta?: string;
+  fecha_expiracion?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvitacionCapitanConDetalles extends InvitacionCapitan {
+  liga?: Liga;
+  capitan?: UserProfile;
+  equipo?: Equipo;
+}
+
+export interface CreateInvitacionCapitanData {
+  liga_id: string;
+  email: string;
+  nombre?: string;
+  telefono?: string;
+  nombre_equipo?: string;
+  mensaje?: string;
 }
 
 // Tipos para permisos y acceso

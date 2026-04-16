@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { RolUsuario } from '@/types/database';
 
 // Tipos
 export interface SimpleUser {
@@ -8,7 +9,7 @@ export interface SimpleUser {
   email: string;
   nombre: string;
   apellido: string;
-  rol: string;
+  rol: RolUsuario;
 }
 
 export interface SimpleProfile {
@@ -16,7 +17,7 @@ export interface SimpleProfile {
   user_id: string;
   nombre: string;
   apellido: string;
-  rol: string;
+  rol: RolUsuario;
   activo: boolean;
   liga_id?: string;
   equipo_id?: string;
@@ -38,6 +39,11 @@ interface SimpleAuthContextType {
   profile: SimpleProfile | null;
   session: SimpleSession | null;
   loading: boolean;
+  isAuthenticated: boolean;
+  isSuperAdmin: boolean;
+  isAdminAdmin: boolean;
+  isAdminLiga: boolean;
+  isCapitanEquipo: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string, nombre: string, apellido?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -180,6 +186,11 @@ export function SimpleAuthProvider({ children }: { children: React.ReactNode }) 
     profile,
     session,
     loading,
+    isAuthenticated: !!user,
+    isSuperAdmin: profile?.rol === 'superadmin',
+    isAdminAdmin: profile?.rol === 'adminadmin' || profile?.rol === 'superadmin',
+    isAdminLiga: profile?.rol === 'admin_liga',
+    isCapitanEquipo: profile?.rol === 'capitan_equipo' || profile?.es_capitan_equipo || false,
     signIn,
     signUp,
     signOut,

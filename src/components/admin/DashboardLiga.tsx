@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ interface Liga {
 }
 
 export default function DashboardLiga() {
-  const { user, profile, isAdminLiga, isAdminAdmin } = useAuth();
+  const { user, profile, isAdminLiga, isAdminAdmin } = useSimpleAuth();
   const [loading, setLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState<EstadisticasLiga | null>(null);
   const [liga, setLiga] = useState<Liga | null>(null);

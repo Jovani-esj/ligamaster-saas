@@ -12,7 +12,8 @@ import {
   Eye,
   Crown,
   Activity,
-  Target
+  Target,
+  Mail
 } from 'lucide-react';
 
 import { PermisosRol } from '@/types/database';
@@ -137,13 +138,37 @@ export default function CapitanDashboard({ profile, permisos }: CapitanDashboard
 
   if (!equipo) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Crown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Sin Equipo Asignado</h1>
-          <p className="text-gray-600">
-            No tienes un equipo asignado. Contacta al administrador de tu liga.
-          </p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card className="text-center py-12">
+            <CardContent>
+              <Crown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Sin Equipo Asignado</h1>
+              <p className="text-gray-600 mb-6">
+                No tienes un equipo asignado. Como capitán, puedes solicitar unirte a una liga.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="/unirse-liga">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Buscar Liga
+                  </Button>
+                </Link>
+                <Link href="/mis-invitaciones">
+                  <Button variant="outline" className="border-green-200 hover:bg-green-50">
+                    <Mail className="w-4 h-4 mr-2 text-green-600" />
+                    Ver Invitaciones
+                  </Button>
+                </Link>
+                <Link href="/aprobaciones">
+                  <Button variant="outline">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Mis Solicitudes
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -247,17 +272,17 @@ export default function CapitanDashboard({ profile, permisos }: CapitanDashboard
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Link href={`/${liga?.slug}/equipos`}>
+                <Link href="/gestion-jugadores">
                   <Button className="w-full justify-start">
                     <Eye className="w-4 h-4 mr-2" />
-                    Ver Jugadores
+                    Ver/Agregar Jugadores
                   </Button>
                 </Link>
                 {permisos?.puede_crear_jugadores && (
-                  <Link href={`/${liga?.slug}/equipos`}>
+                  <Link href="/gestion-jugadores">
                     <Button variant="outline" className="w-full justify-start">
                       <Plus className="w-4 h-4 mr-2" />
-                      Agregar Jugador
+                      Registrar Nuevo Jugador
                     </Button>
                   </Link>
                 )}

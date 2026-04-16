@@ -14,7 +14,7 @@ import {
   deleteLiga,
   getEstadisticasLiga 
 } from '@/lib/database';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ interface LigaManagerProps {
 }
 
 export default function LigaManager({ userId }: LigaManagerProps) {
-  const { profile } = useAuth();
+  const { profile } = useSimpleAuth();
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);

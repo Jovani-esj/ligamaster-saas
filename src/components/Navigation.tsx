@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X, Trophy, Settings, Home, LogOut, User, Users, MapPin, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, isAdminAdmin, isAdminLiga, isCapitanEquipo, signOut } = useAuth();
+  const { isAuthenticated, isAdminAdmin, isAdminLiga, isCapitanEquipo, signOut } = useSimpleAuth();
 
   const handleSignOut = async () => {
     await signOut();
