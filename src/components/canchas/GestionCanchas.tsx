@@ -33,6 +33,12 @@ interface Cancha {
   created_at: string;
 }
 
+interface Liga {
+  id: string;
+  nombre_liga: string;
+  slug: string;
+}
+
 export default function GestionCanchas() {
   const { user, profile } = useSimpleAuth();
   
@@ -41,6 +47,8 @@ export default function GestionCanchas() {
   const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [canchas, setCanchas] = useState<Cancha[]>([]);
+  const [ligas, setLigas] = useState<Liga[]>([]);
+  const [selectedLigaId, setSelectedLigaId] = useState<string>('');
   const [showCrearCancha, setShowCrearCancha] = useState(false);
   const [editandoCancha, setEditandoCancha] = useState<Cancha | null>(null);
 
@@ -56,12 +64,49 @@ export default function GestionCanchas() {
     liga_id: ''
   });
 
+  const cargarLigas = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('ligas')
+        .select('id, nombre_liga, slug')
+        .eq('owner_id', user.id)
+        .eq('activa', true);
+
+      if (error) throw error;
+      setLigas(data || []);
+      
+      // Si solo tiene una liga, seleccionarla por defecto
+      if (data && data.length === 1) {
+        setSelectedLigaId(data[0].id);
+        setFormData(prev => ({ ...prev, liga_id: data[0].id }));
+      }
+    } catch (error) {
+      console.error('Error cargando ligas:', error);
+    }
+  }, [user?.id]);
+
   const cargarCanchas = useCallback(async () => {
     try {
       let query = supabase.from('canchas').select('*');
       
-      if (!isAdminAdmin && profile?.liga_id) {
-        query = query.eq('liga_id', profile.liga_id);
+      // Si no es superadmin, solo mostrar canchas de sus ligas
+      if (!isAdminAdmin) {
+        const { data: userLigas } = await supabase
+          .from('ligas')
+          .select('id')
+          .eq('owner_id', user?.id);
+        
+        const ligaIds = userLigas?.map(l => l.id) || [];
+        if (ligaIds.length > 0) {
+          query = query.in('liga_id', ligaIds);
+        } else {
+          // No tiene ligas, no hay canchas que mostrar
+          setCanchas([]);
+          setLoading(false);
+          return;
+        }
       }
 
       const { data, error } = await query
@@ -76,13 +121,14 @@ export default function GestionCanchas() {
     } finally {
       setLoading(false);
     }
-  }, [isAdminAdmin, profile?.liga_id]);
+  }, [isAdminAdmin, user?.id]);
 
   useEffect(() => {
     if (user && (isAdminLiga || isAdminAdmin)) {
+      cargarLigas();
       cargarCanchas();
     }
-  }, [user, isAdminLiga, isAdminAdmin, cargarCanchas]);
+  }, [user, isAdminLiga, isAdminAdmin, cargarCanchas, cargarLigas]);
 
   const resetForm = () => {
     setFormData({
@@ -107,16 +153,25 @@ export default function GestionCanchas() {
       return;
     }
 
-    if (!profile?.liga_id && !isAdminAdmin) {
-      toast.error('No tienes una liga asignada');
+    if (!formData.liga_id && !isAdminAdmin) {
+      toast.error('Debes seleccionar una liga');
       return;
+    }
+
+    // Si no es adminadmin, verificar que la liga pertenezca al usuario
+    if (!isAdminAdmin) {
+      const ligaPertenece = ligas.some(l => l.id === formData.liga_id);
+      if (!ligaPertenece) {
+        toast.error('No tienes permiso para agregar canchas a esta liga');
+        return;
+      }
     }
 
     setLoading(true);
     try {
       const canchaData = {
         ...formData,
-        liga_id: isAdminAdmin ? formData.liga_id || profile?.liga_id : profile?.liga_id,
+        liga_id: isAdminAdmin ? formData.liga_id : selectedLigaId || formData.liga_id,
         nombre: formData.nombre.trim(),
         direccion: formData.direccion.trim() || null,
         capacidad_espectadores: parseInt(formData.capacidad_espectadores.toString()),
@@ -337,6 +392,44 @@ export default function GestionCanchas() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={guardarCancha} className="space-y-4">
+                  {/* Selector de Liga */}
+                  {!editandoCancha && (
+                    <div>
+                      <Label htmlFor="liga_id">Liga *</Label>
+                      {ligas.length === 0 ? (
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <p className="text-sm text-yellow-800">
+                            No tienes ligas activas. Crea una liga primero en Mis Ligas.
+                          </p>
+                        </div>
+                      ) : ligas.length === 1 ? (
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <p className="text-sm text-gray-700">
+                            <strong>Liga:</strong> {ligas[0].nombre_liga}
+                          </p>
+                        </div>
+                      ) : (
+                        <select
+                          id="liga_id"
+                          value={formData.liga_id}
+                          onChange={(e) => {
+                            setFormData({...formData, liga_id: e.target.value});
+                            setSelectedLigaId(e.target.value);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">Selecciona una liga</option>
+                          {ligas.map((liga) => (
+                            <option key={liga.id} value={liga.id}>
+                              {liga.nombre_liga}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="nombre">Nombre *</Label>

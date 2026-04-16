@@ -52,7 +52,7 @@ interface Partido {
   equipo_local_id: string;
   equipo_visitante_id: string;
   cancha_id?: string;
-  fecha_hora: string;
+  fecha_jornada: string;
   duracion_minutos: number;
   estado: string;
   jornada: number;
@@ -122,7 +122,7 @@ export default function ProgramacionPartidos() {
           cancha:canchas(nombre)
         `)
         .eq('liga_id', ligaId)
-        .order('fecha_hora', { ascending: true });
+        .order('fecha_jornada', { ascending: true });
 
       setEquipos(equiposData || []);
       setCanchas(canchasData || []);
@@ -284,7 +284,7 @@ export default function ProgramacionPartidos() {
                 liga_id: config.liga_id,
                 equipo_local_id: local.id,
                 equipo_visitante_id: visitante.id,
-                fecha_hora: horaInicio.toISOString(),
+                fecha_jornada: horaInicio.toISOString(),
                 duracion_minutos: intervalo_minutos,
                 estado: 'programado',
                 jornada: jornadaActual
@@ -690,10 +690,10 @@ export default function ProgramacionPartidos() {
                           <div className="text-center">
                             <p className="text-2xl font-bold">VS</p>
                             <p className="text-sm text-gray-500">
-                              {new Date(partido.fecha_hora).toLocaleDateString()}
+                              {new Date(partido.fecha_jornada).toLocaleDateString()}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {new Date(partido.fecha_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              {new Date(partido.fecha_jornada).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </p>
                           </div>
                           <div className="text-center">

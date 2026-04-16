@@ -40,12 +40,23 @@ export function useLeagueVerification() {
     '/auth/simple-register',
     '/dashboard',
     '/admin',
+    '/admin/crear-liga',
+    '/admin/mis-ligas',
+    '/admin/canchas',
+    '/admin/programacion-partidos',
+    '/admin/aprobaciones',
+    '/admin/pagos',
+    '/admin/dashboard',
+    '/admin/usuarios',
     '/admin-admin',
     '/buscar',
     '/mis-ligas',
     '/perfil',
     '/configuracion',
     '/crear-liga',
+    '/canchas',
+    '/calendario',
+    '/aprobaciones',
     '/roles-juego',
     '/equipos',
     '/liga-no-encontrada',
@@ -66,6 +77,9 @@ export function useLeagueVerification() {
     
     // Si es una ruta /liga/, no verificar (rutas públicas de visualización)
     if (pathname.startsWith('/liga/')) return false;
+    
+    // Si es una ruta /admin/, no verificar (rutas de administración)
+    if (pathname.startsWith('/admin/')) return false;
     
     // Si es una ruta pública o no hay slug, no verificar
     if (publicRoutes.includes(pathname) || !slug) return false;

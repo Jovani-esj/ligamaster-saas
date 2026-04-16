@@ -62,11 +62,11 @@ export default function AdminLigaDashboard({ profile, permisos, user }: AdminLig
         .order('created_at', { ascending: false });
 
       if (ligasError) {
-        // Si no existe la columna creado_por, intentar con user_id
+        // Si no existe la columna creado_por, intentar con owner_id
         const { data: ligasData2, error: ligasError2 } = await supabase
           .from('ligas')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('owner_id', user.id)
           .order('created_at', { ascending: false });
         
         if (ligasError2) throw ligasError2;

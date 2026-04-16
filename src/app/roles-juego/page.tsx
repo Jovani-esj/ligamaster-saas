@@ -54,7 +54,7 @@ interface Partido {
   equipo_local_id: string;
   equipo_visitante_id: string;
   cancha_id?: string;
-  fecha_hora: string;
+  fecha_jornada: string;
   duracion_minutos: number;
   estado: string;
   jornada: number;
@@ -111,7 +111,7 @@ export default function RolesJuegoPublicos() {
         .from('partidos')
         .select('*')
         .in('estado', ['programado', 'jugado', 'finalizado'])
-        .order('fecha_hora', { ascending: true })
+        .order('fecha_jornada', { ascending: true })
         .limit(50);
 
       if (partidosError) {
@@ -183,7 +183,7 @@ export default function RolesJuegoPublicos() {
   const partidosPagina = partidosFiltrados.slice(indiceInicio, indiceInicio + partidosPorPagina);
 
   const partidosPorFecha = partidosPagina.reduce((acc, partido) => {
-    const fecha = new Date(partido.fecha_hora).toLocaleDateString();
+    const fecha = new Date(partido.fecha_jornada).toLocaleDateString();
     if (!acc[fecha]) {
       acc[fecha] = [];
     }
@@ -508,7 +508,7 @@ export default function RolesJuegoPublicos() {
                               <div className="text-center px-4">
                                 <p className="text-xl font-bold text-gray-400">VS</p>
                                 <p className="text-xs text-gray-500">
-                                  {new Date(partido.fecha_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  {new Date(partido.fecha_jornada).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </p>
                               </div>
                               <div className="text-center flex-1">
@@ -579,10 +579,10 @@ export default function RolesJuegoPublicos() {
                         <td className="py-3 px-4">
                           <div>
                             <p className="text-sm text-gray-900">
-                              {new Date(partido.fecha_hora).toLocaleDateString()}
+                              {new Date(partido.fecha_jornada).toLocaleDateString()}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {new Date(partido.fecha_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              {new Date(partido.fecha_jornada).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </p>
                           </div>
                         </td>

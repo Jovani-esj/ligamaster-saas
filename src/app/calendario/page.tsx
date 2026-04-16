@@ -22,7 +22,7 @@ interface Partido {
   equipo_local_id: string;
   equipo_visitante_id: string;
   cancha_id: string;
-  fecha_hora: string;
+  fecha_jornada: string;
   duracion_minutos: number;
   estado: string;
   goles_local: number;
@@ -105,7 +105,7 @@ export default function CalendarioPage() {
           liga:ligas!partidos_liga_id_fkey(nombre_liga, slug)
         `)
         .eq('liga_id', ligaSeleccionada)
-        .order('fecha_hora', { ascending: true });
+        .order('fecha_jornada', { ascending: true });
 
       // Si estamos en vista de mes, filtrar por mes
       if (vista === 'mes') {
@@ -113,8 +113,8 @@ export default function CalendarioPage() {
         const ultimoDia = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0);
         
         query = query
-          .gte('fecha_hora', primerDia.toISOString())
-          .lte('fecha_hora', ultimoDia.toISOString());
+          .gte('fecha_jornada', primerDia.toISOString())
+          .lte('fecha_jornada', ultimoDia.toISOString());
       }
 
       const { data, error } = await query;
@@ -163,7 +163,7 @@ export default function CalendarioPage() {
     const agrupados: Record<string, Partido[]> = {};
     
     partidos.forEach(partido => {
-      const fecha = new Date(partido.fecha_hora).toLocaleDateString('es-MX');
+      const fecha = new Date(partido.fecha_jornada).toLocaleDateString('es-MX');
       if (!agrupados[fecha]) {
         agrupados[fecha] = [];
       }
@@ -292,7 +292,7 @@ export default function CalendarioPage() {
                                 {obtenerResultado(partido)}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {formatearHora(partido.fecha_hora)}
+                                {formatearHora(partido.fecha_jornada)}
                               </p>
                             </div>
                             <div className="flex-1">
@@ -354,10 +354,10 @@ export default function CalendarioPage() {
                           <td className="py-4 px-4">
                             <div>
                               <p className="font-medium text-gray-900">
-                                {formatearFecha(partido.fecha_hora)}
+                                {formatearFecha(partido.fecha_jornada)}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {formatearHora(partido.fecha_hora)}
+                                {formatearHora(partido.fecha_jornada)}
                               </p>
                             </div>
                           </td>

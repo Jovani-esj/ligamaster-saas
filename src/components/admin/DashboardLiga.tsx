@@ -125,8 +125,8 @@ export default function DashboardLiga() {
         `)
         .eq('liga_id', ligaId)
         .eq('estado', 'programado')
-        .gte('fecha_hora', new Date().toISOString())
-        .order('fecha_hora', { ascending: true })
+        .gte('fecha_jornada', new Date().toISOString())
+        .order('fecha_jornada', { ascending: true })
         .limit(5);
 
       if (error) throw error;
@@ -353,7 +353,7 @@ export default function DashboardLiga() {
                           {partido.equipo_local?.nombre} vs {partido.equipo_visitante?.nombre}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(partido.fecha_hora).toLocaleDateString('es-MX', {
+                          {new Date(partido.fecha_jornada).toLocaleDateString('es-MX', {
                             day: 'numeric',
                             month: 'short',
                             hour: '2-digit',
