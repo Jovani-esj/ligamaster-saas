@@ -89,6 +89,43 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
       return;
     }
 
+    // Buscar o crear un torneo para esta liga
+    let torneoId: string;
+    
+    // Primero buscar si ya existe un torneo activo para esta liga
+    const { data: torneosExistentes } = await supabase
+      .from('torneos')
+      .select('id, nombre')
+      .eq('liga_id', liga.id)
+      .eq('activo', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (torneosExistentes && torneosExistentes.length > 0) {
+      torneoId = torneosExistentes[0].id;
+      toast.info(`Usando torneo existente: ${torneosExistentes[0].nombre}`);
+    } else {
+      // Crear un nuevo torneo
+      const nombreTorneo = `Torneo ${new Date().getFullYear()}`;
+      const { data: nuevoTorneo, error: errorTorneo } = await supabase
+        .from('torneos')
+        .insert([{
+          liga_id: liga.id,
+          nombre: nombreTorneo,
+          activo: true
+        }])
+        .select('id, nombre')
+        .single();
+
+      if (errorTorneo || !nuevoTorneo) {
+        toast.error("Error al crear torneo: " + (errorTorneo?.message || 'Error desconocido'));
+        return;
+      }
+
+      torneoId = nuevoTorneo.id;
+      toast.success(`Torneo creado: ${nuevoTorneo.nombre}`);
+    }
+
     // Si el número de equipos es impar, se añade un "BYE" (descanso)
     const listaEquipos = [...equipos];
     if (listaEquipos.length % 2 !== 0) {
@@ -109,7 +146,7 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
         if (local.id && visitante.id) {
           nuevosPartidos.push({
             liga_id: liga.id,
-            torneo_id: 'TU_TORNEO_ID_AQUÍ', // Deberás crear un torneo primero o usar uno genérico
+            torneo_id: torneoId,
             equipo_local_id: local.id,
             equipo_visitante_id: visitante.id,
             estado: 'programado',
@@ -127,7 +164,7 @@ export default function OrganizadorPage({ params }: { params: Promise<{ slug: st
     if (error) {
       toast.error("Error al generar calendario: " + error.message);
     } else {
-      toast.success("¡Calendario Round Robin generado con éxito!");
+      toast.success(`¡Calendario generado! ${nuevosPartidos.length} partidos creados.`);
     }
   };
 

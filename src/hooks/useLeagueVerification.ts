@@ -50,7 +50,9 @@ export function useLeagueVerification() {
     '/equipos',
     '/liga-no-encontrada',
     '/liga-inactiva',
-    '/liga-suspendida'
+    '/liga-suspendida',
+    '/gestion-ligas',
+    '/reportes'
   ], []);
 
   // Extraer el slug de la URL para rutas dinámicas de ligas

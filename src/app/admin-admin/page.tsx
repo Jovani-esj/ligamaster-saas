@@ -19,7 +19,8 @@ import {
   Shield,
   Crown,
   UserCheck,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 
 interface Liga {
@@ -96,77 +97,34 @@ export default function AdminAdminDashboard() {
     try {
       setLoading(true);
       
-      // Cargar ligas con estadísticas
-      const { data: ligasData, error: ligasError } = await supabase
-        .from('ligas')
-        .select(`
-          *
-        `)
-        .order('created_at', { ascending: false });
+      // Usar API route con service role key (bypass RLS)
+      const response = await fetch('/api/admin-stats');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
 
-      if (ligasError) throw ligasError;
+      const data = await response.json();
 
-      // Cargar estadísticas para cada liga
-      const ligasConEstadisticas = await Promise.all(
-        (ligasData || []).map(async (liga) => {
-          const { data: stats } = await supabase
-            .from('vista_estadisticas_liga')
-            .select('*')
-            .eq('liga_id', liga.id)
-            .single();
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-          // Obtener información del owner
-          let owner = null;
-          if (liga.owner_id) {
-            const { data: ownerData } = await supabase
-              .from('user_profiles')
-              .select('nombre, apellido')
-              .eq('user_id', liga.owner_id)
-              .single();
-            owner = ownerData;
-          }
-
-          return {
-            ...liga,
-            owner,
-            estadisticas: stats || {
-              total_equipos: 0,
-              total_jugadores: 0,
-              total_partidos: 0,
-              partidos_jugados: 0
-            }
-          };
-        })
-      );
-
-      // Cargar usuarios
-      const { data: usuariosData, error: usuariosError } = await supabase
-        .from('user_profiles')
-        .select(`
-          *
-        `)
-        .order('created_at', { ascending: false });
-
-      if (usuariosError) throw usuariosError;
-
-      setLigas(ligasConEstadisticas);
-      setUsuarios(usuariosData || []);
-
-      // Calcular estadísticas generales
-      const stats = {
-        totalLigas: ligasConEstadisticas.length,
-        ligasActivas: ligasConEstadisticas.filter(l => l.activa).length,
-        ligasPagadas: ligasConEstadisticas.filter(l => l.estatus_pago).length,
-        totalUsuarios: usuariosData?.length || 0,
-        totalEquipos: ligasConEstadisticas.reduce((sum: number, l: Liga) => sum + (l.estadisticas?.total_equipos || 0), 0),
-        totalJugadores: ligasConEstadisticas.reduce((sum: number, l: Liga) => sum + (l.estadisticas?.total_jugadores || 0), 0),
-        totalPartidos: ligasConEstadisticas.reduce((sum: number, l: Liga) => sum + (l.estadisticas?.total_partidos || 0), 0)
-      };
-
-      setEstadisticas(stats);
+      setLigas(data.ligas || []);
+      setUsuarios(data.usuarios || []);
+      setEstadisticas(data.estadisticas || {
+        totalLigas: 0,
+        ligasActivas: 0,
+        ligasPagadas: 0,
+        totalUsuarios: 0,
+        totalEquipos: 0,
+        totalJugadores: 0,
+        totalPartidos: 0
+      });
     } catch (error) {
       console.error('Error cargando datos:', error);
-      toast.error('Error al cargar los datos del dashboard');
+      toast.error(`Error al cargar los datos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }
@@ -269,9 +227,9 @@ export default function AdminAdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Cargando dashboard...</p>
         </div>
       </div>
