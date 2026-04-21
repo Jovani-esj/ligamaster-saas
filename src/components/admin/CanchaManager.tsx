@@ -13,6 +13,7 @@ import {
   updateCancha, 
   deleteCancha 
 } from '@/lib/database';
+import { supabase } from '@/lib/supabase';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
+  const [misLigas, setMisLigas] = useState<{id: string, nombre_liga: string}[]>([]);
 
   // Form data
   const [formData, setFormData] = useState<CreateCanchaData>({
@@ -63,7 +65,8 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
     capacidad_espectadores: 0,
     tiene_iluminacion: false,
     tiene_vestuarios: false,
-    precio_hora: 0
+    precio_hora: 0,
+    liga_ids: [ligaId]
   });
 
   // Verificar permisos
@@ -91,6 +94,18 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
       fetchCanchas();
     }
   }, [puedeVerCanchas, ligaId, fetchCanchas]);
+
+  useEffect(() => {
+    const fetchMisLigas = async () => {
+      if (profile?.id) {
+        const { data } = await supabase.from('ligas').select('id, nombre_liga').eq('owner_id', profile.id);
+        if (data) setMisLigas(data);
+      }
+    };
+    if (puedeCrearCanchas || puedeEditarCanchas) {
+      fetchMisLigas();
+    }
+  }, [profile?.id, puedeCrearCanchas, puedeEditarCanchas]);
 
   const handleCreateCancha = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +167,8 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
       capacidad_espectadores: cancha.capacidad_espectadores,
       tiene_iluminacion: cancha.tiene_iluminacion,
       tiene_vestuarios: cancha.tiene_vestuarios,
-      precio_hora: cancha.precio_hora
+      precio_hora: cancha.precio_hora,
+      liga_ids: (cancha as any).liga_ids || [ligaId]
     });
     setShowEditDialog(true);
   };
@@ -166,7 +182,8 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
       capacidad_espectadores: 0,
       tiene_iluminacion: false,
       tiene_vestuarios: false,
-      precio_hora: 0
+      precio_hora: 0,
+      liga_ids: [ligaId]
     });
   };
 
@@ -329,6 +346,41 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
                       className="rounded"
                     />
                     <Label htmlFor="tiene_vestuarios">Tiene Vestuarios</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Asignar a Ligas (Selecciona una o más)</Label>
+                  <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-gray-50">
+                    {misLigas.length === 0 ? (
+                      <p className="text-sm text-gray-500">Cargando tus ligas...</p>
+                    ) : (
+                      misLigas.map((liga) => (
+                        <div key={liga.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`liga_create_${liga.id}`}
+                            checked={formData.liga_ids?.includes(liga.id) || false}
+                            onChange={(e) => {
+                              const newIds = e.target.checked
+                                ? [...(formData.liga_ids || []), liga.id]
+                                : (formData.liga_ids || []).filter(id => id !== liga.id);
+                              
+                              if (newIds.length > 0) {
+                                setFormData(prev => ({ ...prev, liga_ids: newIds }));
+                              } else {
+                                toast.error('Debe asignar la cancha al menos a una liga');
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <Label htmlFor={`liga_create_${liga.id}`} className="font-normal cursor-pointer">
+                            {liga.nombre_liga}
+                            {liga.id === ligaId && ' (Liga Actual)'}
+                          </Label>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -571,6 +623,41 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
                   className="rounded"
                 />
                 <Label htmlFor="edit_tiene_vestuarios">Tiene Vestuarios</Label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Asignar a Ligas (Selecciona una o más)</Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-gray-50">
+                {misLigas.length === 0 ? (
+                  <p className="text-sm text-gray-500">Cargando tus ligas...</p>
+                ) : (
+                  misLigas.map((liga) => (
+                    <div key={liga.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`liga_edit_${liga.id}`}
+                        checked={formData.liga_ids?.includes(liga.id) || false}
+                        onChange={(e) => {
+                          const newIds = e.target.checked
+                            ? [...(formData.liga_ids || []), liga.id]
+                            : (formData.liga_ids || []).filter(id => id !== liga.id);
+                          
+                          if (newIds.length > 0) {
+                            setFormData(prev => ({ ...prev, liga_ids: newIds }));
+                          } else {
+                            toast.error('Debe asignar la cancha al menos a una liga');
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <Label htmlFor={`liga_edit_${liga.id}`} className="font-normal cursor-pointer">
+                        {liga.nombre_liga}
+                        {liga.id === ligaId && ' (Liga Actual)'}
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

@@ -63,7 +63,11 @@ export function useLeagueVerification() {
     '/liga-inactiva',
     '/liga-suspendida',
     '/gestion-ligas',
-    '/reportes'
+    '/reportes',
+    '/mi-equipo',
+    '/mis-invitaciones',
+    '/unirse-liga',
+    '/suscripcion'
   ], []);
 
   // Extraer el slug de la URL para rutas dinámicas de ligas

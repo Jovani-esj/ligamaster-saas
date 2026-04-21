@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Trophy, Settings, Home, LogOut, User, Users, MapPin, Calendar } from 'lucide-react';
+import { Menu, X, Trophy, Settings, Home, LogOut, User, Users, MapPin, Calendar, CreditCard, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 
@@ -98,6 +98,25 @@ export default function SimpleNavigation() {
                   </Link>
                 )}
                 
+                {isCapitanEquipo && (
+                  <Link 
+                    href="/mi-equipo" 
+                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Mi Equipo</span>
+                  </Link>
+                )}
+
+                {(!isAdminLiga && !isAdminAdmin && !isSuperAdmin) && (
+                  <Link 
+                    href="/mis-invitaciones" 
+                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Mis Invitaciones</span>
+                  </Link>
+                )}
                 {isAdminLiga && (
                   <>
                     <Link 
@@ -114,6 +133,14 @@ export default function SimpleNavigation() {
                     >
                       <Calendar className="h-4 w-4" />
                       <span>Programación</span>
+                    </Link>
+
+                    <Link 
+                      href="/suscripcion" 
+                      className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>Suscripción</span>
                     </Link>
                   </>
                 )}
@@ -247,6 +274,15 @@ export default function SimpleNavigation() {
                       >
                         <Calendar className="h-4 w-4" />
                         <span>Programación</span>
+                      </Link>
+
+                      <Link 
+                        href="/suscripcion" 
+                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        <span>Suscripción</span>
                       </Link>
                     </>
                   )}

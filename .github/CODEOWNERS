@@ -1,0 +1,36 @@
+# LigaMaster SaaS - Code Owners
+# Asignación automática de reviewers por dominio
+
+# Global - Todo pasa por revisión del lead
+* @lead-developer
+
+# Dev 1: SuperAdmin - Gestión de tenants y plataforma
+/src/domains/superadmin/ @dev1-superadmin
+/src/app/(superadmin)/ @dev1-superadmin
+/supabase/migrations/00* @dev1-superadmin
+/src/shared/types/database.ts @dev1-superadmin @dev2-liga @dev3-equipo
+
+# Dev 2: Liga - Lógica deportiva y árbitros
+/src/domains/liga/ @dev2-liga
+/src/app/(liga)/ @dev2-liga
+/supabase/migrations/*partidos* @dev2-liga
+/supabase/migrations/*canchas* @dev2-liga
+/supabase/migrations/*torneos* @dev2-liga
+/supabase/migrations/*arbitros* @dev2-liga
+
+# Dev 3: Equipo - Jugadores y vista pública
+/src/domains/equipo/ @dev3-equipo
+/src/app/(equipo)/ @dev3-equipo
+/supabase/migrations/*equipos* @dev3-equipo
+/supabase/migrations/*jugadores* @dev3-equipo
+/supabase/migrations/*invitaciones* @dev3-equipo
+
+# Shared - Colaborativo (requiere 2 aprobaciones)
+/src/shared/ @dev1-superadmin @dev2-liga @dev3-equipo
+/src/domains/shared/ @dev1-superadmin @dev2-liga @dev3-equipo
+/.github/ @lead-developer
+
+# Tests - Responsable del dominio
+/tests/superadmin/ @dev1-superadmin
+/tests/liga/ @dev2-liga
+/tests/equipo/ @dev3-equipo

@@ -2,11 +2,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import EquipoManager from '@/components/admin/EquipoManager';
+import JugadorManager from '@/components/admin/JugadorManager';
+import CanchaManager from '@/components/admin/CanchaManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Trophy, MapPin, Shield, Plus } from 'lucide-react';
+import { ShieldCheck, LogOut, ArrowRight, Home, Users, Trophy, MapPin, Shield, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getEquipos } from '@/lib/database';
+import { Equipo } from '@/types/database';
 import Link from 'next/link';
 
 interface Liga {
@@ -19,6 +23,8 @@ function EquiposContent() {
   const { user, profile } = useSimpleAuth();
   const [ligas, setLigas] = useState<Liga[]>([]);
   const [selectedLigaId, setSelectedLigaId] = useState<string>('');
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
@@ -50,6 +56,24 @@ function EquiposContent() {
   useEffect(() => {
     cargarLigas();
   }, [cargarLigas]);
+
+  useEffect(() => {
+    if (selectedLigaId) {
+      getEquipos(selectedLigaId)
+        .then(data => {
+          setEquipos(data);
+          if (data.length > 0 && !selectedEquipoId) {
+            setSelectedEquipoId(data[0].id);
+          } else if (data.length === 0) {
+            setSelectedEquipoId('');
+          }
+        })
+        .catch(console.error);
+    } else {
+      setEquipos([]);
+      setSelectedEquipoId('');
+    }
+  }, [selectedLigaId]);
 
   if (loading) {
     return (
@@ -173,21 +197,45 @@ function EquiposContent() {
           </TabsContent>
 
           <TabsContent value="jugadores" className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Gestión de Jugadores</h3>
-              <p className="text-gray-600">
-                Selecciona un equipo para gestionar sus jugadores
-              </p>
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <div className="flex items-center gap-4">
+                <Users className="w-5 h-5 text-blue-600" />
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Selecciona un Equipo
+                  </label>
+                  <select
+                    value={selectedEquipoId}
+                    onChange={(e) => setSelectedEquipoId(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecciona un equipo</option>
+                    {equipos.map((equipo) => (
+                      <option key={equipo.id} value={equipo.id}>
+                        {equipo.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
+            {selectedEquipoId ? (
+              <JugadorManager 
+                equipoId={selectedEquipoId} 
+                equipoNombre={equipos.find(e => e.id === selectedEquipoId)?.nombre} 
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <p className="text-gray-500">Selecciona un equipo para gestionar sus jugadores.</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="canchas" className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Gestión de Canchas</h3>
-              <p className="text-gray-600">
-                Usa el menú Canchas para gestionar las canchas de tus ligas
-              </p>
-            </div>
+            <CanchaManager 
+              ligaId={selectedLigaId} 
+              ligaNombre={ligas.find(l => l.id === selectedLigaId)?.nombre_liga} 
+            />
           </TabsContent>
         </Tabs>
       </div>

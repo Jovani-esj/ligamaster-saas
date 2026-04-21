@@ -23,7 +23,8 @@ import {
   crearCapitanDirecto,
   revocarCapitan,
   getCapitanesSinLiga,
-  asignarCapitanALiga
+  asignarCapitanALiga,
+  buscarUsuariosCandidatosCapitan
 } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
@@ -62,8 +63,15 @@ export default function AprobacionesPage() {
     apellido: '',
     telefono: '',
     nombre_equipo: '',
+    password: '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Estados para búsqueda de usuarios
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{id: string, nombre: string, apellido: string | null, email: string}>>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{id: string, nombre: string, apellido: string | null, email: string} | null>(null);
 
   const isAdminLiga = profile?.rol === 'admin_liga';
   const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
@@ -197,6 +205,26 @@ export default function AprobacionesPage() {
     }
   }, [selectedLigaId]);
 
+  // Efecto para buscar usuarios
+  useEffect(() => {
+    const searchTimer = setTimeout(async () => {
+      if (searchQuery.length >= 2 && !selectedUser) {
+        setSearching(true);
+        try {
+          const results = await buscarUsuariosCandidatosCapitan(searchQuery);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error buscando usuarios:', error);
+        } finally {
+          setSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(searchTimer);
+  }, [searchQuery, selectedUser]);
+
   // Efecto para cargar datos según la pestaña activa
   useEffect(() => {
     if (selectedLigaId) {
@@ -316,6 +344,8 @@ export default function AprobacionesPage() {
       toast.success('Invitación enviada exitosamente');
       setShowInvitarDialog(false);
       setInvitacionForm({ email: '', nombre: '', nombre_equipo: '', mensaje: '' });
+      setSearchQuery('');
+      setSelectedUser(null);
       await cargarInvitaciones();
     } catch (error) {
       console.error('Error enviando invitación:', error);
@@ -337,16 +367,17 @@ export default function AprobacionesPage() {
 
     setSubmitting(true);
     try {
-      const { user, equipo } = await crearCapitanDirecto(selectedLigaId, {
+      const result = await crearCapitanDirecto(selectedLigaId, {
         email: crearCapitanForm.email,
         nombre: crearCapitanForm.nombre,
         apellido: crearCapitanForm.apellido,
         telefono: crearCapitanForm.telefono || undefined,
         nombre_equipo: crearCapitanForm.nombre_equipo,
+        password: crearCapitanForm.password || undefined,
       });
-      toast.success(`Capitán ${user.nombre} creado con equipo ${equipo.nombre}. Se envió email con contraseña temporal.`);
+      toast.success(`Capitán ${result.user.nombre} creado con equipo ${result.equipo.nombre}. Contraseña de acceso: ${result.passwordUsada}`, { duration: 10000 });
       setShowCrearCapitanDialog(false);
-      setCrearCapitanForm({ email: '', nombre: '', apellido: '', telefono: '', nombre_equipo: '' });
+      setCrearCapitanForm({ email: '', nombre: '', apellido: '', telefono: '', nombre_equipo: '', password: '' });
       await cargarCapitanes();
     } catch (error) {
       console.error('Error creando capitán:', error);
@@ -622,28 +653,93 @@ export default function AprobacionesPage() {
                       <DialogTitle>Invitar Capitán de Equipo</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleEnviarInvitacion} className="space-y-4 mt-4">
-                      <div>
-                        <Label htmlFor="email">Email del Capitán *</Label>
-                        <Input id="email" type="email" required value={invitacionForm.email} onChange={(e) => setInvitacionForm(prev => ({ ...prev, email: e.target.value }))} placeholder="capitan@ejemplo.com" />
+                      <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800 mb-4">
+                        Busca a un usuario registrado en la plataforma para enviarle la invitación.
                       </div>
-                      <div>
-                        <Label htmlFor="nombre">Nombre del Capitán *</Label>
-                        <Input id="nombre" required value={invitacionForm.nombre} onChange={(e) => setInvitacionForm(prev => ({ ...prev, nombre: e.target.value }))} placeholder="Juan Pérez" />
-                      </div>
-                      <div>
-                        <Label htmlFor="nombre_equipo">Nombre del Equipo *</Label>
-                        <Input id="nombre_equipo" required value={invitacionForm.nombre_equipo} onChange={(e) => setInvitacionForm(prev => ({ ...prev, nombre_equipo: e.target.value }))} placeholder="Los Tigres" />
-                      </div>
-                      <div>
-                        <Label htmlFor="mensaje">Mensaje (opcional)</Label>
-                        <Input id="mensaje" value={invitacionForm.mensaje} onChange={(e) => setInvitacionForm(prev => ({ ...prev, mensaje: e.target.value }))} placeholder="Te invitamos a unirte a nuestra liga..." />
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button type="button" variant="outline" onClick={() => setShowInvitarDialog(false)} className="flex-1">Cancelar</Button>
-                        <Button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                          {submitting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : 'Enviar Invitación'}
-                        </Button>
-                      </div>
+                      
+                      {!selectedUser ? (
+                        <div className="relative">
+                          <Label htmlFor="searchUser">Buscar Usuario (Email o Nombre)</Label>
+                          <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="searchUser"
+                              placeholder="Ej: juan@ejemplo.com"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-8"
+                            />
+                          </div>
+                          
+                          {searching && <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg p-2 text-sm text-gray-500 text-center">Buscando...</div>}
+                          
+                          {searchResults.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {searchResults.map(u => (
+                                <div 
+                                  key={u.id}
+                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex flex-col"
+                                  onClick={() => {
+                                    setSelectedUser(u);
+                                    setInvitacionForm(prev => ({ 
+                                      ...prev, 
+                                      email: u.email, 
+                                      nombre: `${u.nombre} ${u.apellido || ''}`.trim() 
+                                    }));
+                                    setSearchQuery('');
+                                    setSearchResults([]);
+                                  }}
+                                >
+                                  <span className="font-medium">{u.nombre} {u.apellido}</span>
+                                  <span className="text-xs text-gray-500">{u.email}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg p-3 text-sm text-gray-600 text-center">
+                              No se encontraron usuarios. Si el usuario no existe, puedes crearlo directamente desde "Crear Capitán Directo".
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 p-3 rounded border flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{selectedUser.nombre} {selectedUser.apellido}</p>
+                            <p className="text-xs text-gray-500">{selectedUser.email}</p>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => {
+                            setSelectedUser(null);
+                            setInvitacionForm(prev => ({ ...prev, email: '', nombre: '' }));
+                          }}>
+                            Cambiar
+                          </Button>
+                        </div>
+                      )}
+
+                      {selectedUser && (
+                        <>
+                          <div>
+                            <Label htmlFor="nombre_equipo">Nombre del Equipo *</Label>
+                            <Input id="nombre_equipo" required value={invitacionForm.nombre_equipo} onChange={(e) => setInvitacionForm(prev => ({ ...prev, nombre_equipo: e.target.value }))} placeholder="Los Tigres" />
+                          </div>
+                          <div>
+                            <Label htmlFor="mensaje">Mensaje (opcional)</Label>
+                            <Input id="mensaje" value={invitacionForm.mensaje} onChange={(e) => setInvitacionForm(prev => ({ ...prev, mensaje: e.target.value }))} placeholder="Te invitamos a unirte a nuestra liga..." />
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button type="button" variant="outline" onClick={() => {
+                              setShowInvitarDialog(false);
+                              setSelectedUser(null);
+                              setSearchQuery('');
+                            }} className="flex-1">Cancelar</Button>
+                            <Button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                              {submitting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : 'Enviar Invitación'}
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -677,6 +773,10 @@ export default function AprobacionesPage() {
                       <div>
                         <Label htmlFor="crear-telefono">Teléfono</Label>
                         <Input id="crear-telefono" value={crearCapitanForm.telefono} onChange={(e) => setCrearCapitanForm(prev => ({ ...prev, telefono: e.target.value }))} placeholder="+52 123 456 7890" />
+                      </div>
+                      <div>
+                        <Label htmlFor="crear-password">Contraseña de acceso (opcional)</Label>
+                        <Input id="crear-password" type="text" value={crearCapitanForm.password} onChange={(e) => setCrearCapitanForm(prev => ({ ...prev, password: e.target.value }))} placeholder="Dejar en blanco para generar una aleatoria" />
                       </div>
                       <div>
                         <Label htmlFor="crear-nombre-equipo">Nombre del Equipo *</Label>

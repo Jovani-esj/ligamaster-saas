@@ -14,7 +14,8 @@ import {
   updateEquipo, 
   deleteEquipo,
   getJugadores,
-  getEstadisticasEquipo 
+  getEstadisticasEquipo,
+  getCapitanesPorLiga
 } from '@/lib/database';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Eye, Users, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash2, Eye, Users, Settings, Crown } from 'lucide-react';
 import Image from 'next/image';
 
 
@@ -38,13 +40,15 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
   const [jugadoresPorEquipo, setJugadoresPorEquipo] = useState<Record<string, Jugador[]>>({});
   const [estadisticas, setEstadisticas] = useState<Record<string, EstadisticasEquipo>>({});
   const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
+  const [capitanes, setCapitanes] = useState<Array<{id: string, nombre: string, apellido: string | null}>>([]);
 
   // Form data
   const [formData, setFormData] = useState<CreateEquipoData>({
     nombre: '',
     logo_url: '',
     color_primario: '#000000',
-    color_secundario: '#FFFFFF'
+    color_secundario: '#FFFFFF',
+    capitan_id: ''
   });
 
   // Verificar permisos
@@ -61,6 +65,8 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
       setLoading(true);
       const data = await getEquipos(ligaId);
       setEquipos(data);
+      const caps = await getCapitanesPorLiga(ligaId);
+      setCapitanes(caps);
     } catch (error) {
       console.error('Error fetching equipos:', error);
       toast.error('Error al cargar los equipos');
@@ -101,10 +107,13 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
     if (!puedeCrearEquipos || !ligaId) return;
 
     try {
-      await createEquipo(formData, ligaId);
+      const dataToSubmit = { ...formData };
+      if (!dataToSubmit.capitan_id) delete dataToSubmit.capitan_id;
+      
+      await createEquipo(dataToSubmit, ligaId);
       toast.success('Equipo creado correctamente');
       setShowCreateDialog(false);
-      setFormData({ nombre: '', logo_url: '', color_primario: '#000000', color_secundario: '#FFFFFF' });
+      setFormData({ nombre: '', logo_url: '', color_primario: '#000000', color_secundario: '#FFFFFF', capitan_id: '' });
       fetchEquipos();
     } catch (error) {
       console.error('Error creating equipo:', error);
@@ -117,11 +126,14 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
     if (!selectedEquipo || !puedeEditarEquipos) return;
 
     try {
-      await updateEquipo(selectedEquipo.id, formData);
+      const dataToSubmit = { ...formData };
+      if (!dataToSubmit.capitan_id) delete dataToSubmit.capitan_id;
+      
+      await updateEquipo(selectedEquipo.id, dataToSubmit);
       toast.success('Equipo actualizado correctamente');
       setShowEditDialog(false);
       setSelectedEquipo(null);
-      setFormData({ nombre: '', logo_url: '', color_primario: '#000000', color_secundario: '#FFFFFF' });
+      setFormData({ nombre: '', logo_url: '', color_primario: '#000000', color_secundario: '#FFFFFF', capitan_id: '' });
       fetchEquipos();
     } catch (error) {
       console.error('Error updating equipo:', error);
@@ -152,7 +164,8 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
       nombre: equipo.nombre,
       logo_url: equipo.logo_url || '',
       color_primario: equipo.color_primario,
-      color_secundario: equipo.color_secundario
+      color_secundario: equipo.color_secundario,
+      capitan_id: equipo.capitan_id || ''
     });
     setShowEditDialog(true);
   };
@@ -200,6 +213,25 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
                     onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
                     placeholder="https://ejemplo.com/logo.png"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="capitan_id">Capitán (opcional)</Label>
+                  <Select 
+                    value={formData.capitan_id} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, capitan_id: val === "none" ? "" : val }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar un capitán" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin capitán asignado</SelectItem>
+                      {capitanes.map(cap => (
+                        <SelectItem key={cap.id} value={cap.id}>
+                          {cap.nombre} {cap.apellido || ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -316,6 +348,19 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
                         <span className="text-gray-600">Creado:</span>
                         <span>{new Date(equipo.created_at).toLocaleDateString()}</span>
                       </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Capitán:</span>
+                        {equipo.capitan_id ? (
+                          <div className="flex items-center gap-1 text-yellow-600">
+                            <Crown className="w-4 h-4" />
+                            <span className="font-medium">
+                              {capitanes.find(c => c.id === equipo.capitan_id)?.nombre || 'Capitán'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">Sin asignar</span>
+                        )}
+                      </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Jugadores:</span>
                         <span className="font-semibold">{jugadoresPorEquipo[equipo.id]?.length || 0}</span>
@@ -430,6 +475,25 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
                 onChange={(e) => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
                 placeholder="https://ejemplo.com/logo.png"
               />
+            </div>
+            <div>
+              <Label htmlFor="edit_capitan_id">Capitán (opcional)</Label>
+              <Select 
+                value={formData.capitan_id || "none"} 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, capitan_id: val === "none" ? "" : val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar un capitán" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin capitán asignado</SelectItem>
+                  {capitanes.map(cap => (
+                    <SelectItem key={cap.id} value={cap.id}>
+                      {cap.nombre} {cap.apellido || ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

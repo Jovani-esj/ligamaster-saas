@@ -89,8 +89,7 @@ export interface Jugador {
 
 export interface Cancha {
   id: string;
-  liga_id?: string; // Legacy, kept for backwards compatibility
-  owner_id?: string;
+  liga_id: string;
   nombre: string;
   direccion?: string;
   tipo: string;
@@ -180,7 +179,6 @@ export interface CreateEquipoData {
   logo_url?: string;
   color_primario: string;
   color_secundario: string;
-  capitan_id?: string;
 }
 
 export interface CreateJugadorData {
@@ -204,11 +202,10 @@ export interface CreateCanchaData {
   direccion?: string;
   tipo: string;
   superficie: string;
-  capacidad_espectadores: number;
-  tiene_iluminacion: boolean;
-  tiene_vestuarios: boolean;
-  precio_hora: number;
-  liga_ids?: string[]; // Array de ligas a las que se asignará
+  capacidad_espectadores?: number;
+  tiene_iluminacion?: boolean;
+  tiene_vestuarios?: boolean;
+  precio_hora?: number;
 }
 
 export interface CreateConfiguracionTemporadaData {

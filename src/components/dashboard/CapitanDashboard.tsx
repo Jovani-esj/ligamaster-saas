@@ -122,6 +122,8 @@ export default function CapitanDashboard({ profile, permisos }: CapitanDashboard
   useEffect(() => {
     if (profile?.equipo_id) {
       cargarDatosEquipo();
+    } else {
+      setLoading(false);
     }
   }, [profile?.equipo_id, cargarDatosEquipo]);
 

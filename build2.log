@@ -1,0 +1,23 @@
+
+> ligamaster-saas@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.2.2 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 16.7s
+  Running TypeScript ...
+Failed to type check.
+
+./src/components/SimpleNavigation.tsx:116:22
+Type error: Cannot find name 'Shield'.
+
+  114 |                     className="flex items-center space-x-1 text-gray-700 hover:text-blue-...
+  115 |                   >
+> 116 |                     <Shield className="h-4 w-4" />
+      |                      ^
+  117 |                     <span>Mis Invitaciones</span>
+  118 |                   </Link>
+  119 |                 )}
+Next.js build worker exited with code: 1 and signal: null

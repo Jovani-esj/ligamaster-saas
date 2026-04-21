@@ -153,10 +153,21 @@ export async function createEquipo(data: CreateEquipoData, liga_id: string): Pro
     .single();
     
   if (error) throw error;
+  
+  if (data.capitan_id) {
+    await asignarCapitanAEquipo(equipo.id, data.capitan_id, liga_id);
+  }
+  
   return equipo;
 }
 
 export async function updateEquipo(id: string, data: Partial<Equipo>): Promise<Equipo> {
+  // Check old captain if we are updating it
+  let capitan_id_changed = false;
+  if (data.capitan_id !== undefined) {
+    capitan_id_changed = true;
+  }
+
   const { data: equipo, error } = await supabase
     .from('equipos')
     .update(data)
@@ -165,7 +176,51 @@ export async function updateEquipo(id: string, data: Partial<Equipo>): Promise<E
     .single();
     
   if (error) throw error;
+
+  if (capitan_id_changed) {
+    await asignarCapitanAEquipo(equipo.id, data.capitan_id || null, equipo.liga_id);
+  }
+
   return equipo;
+}
+
+export async function asignarCapitanAEquipo(equipo_id: string, capitan_id: string | null, liga_id: string): Promise<void> {
+  // Primero, si hay usuarios que tengan este equipo_id pero ya no son capitanes, quitarles el equipo
+  if (capitan_id) {
+    await supabase
+      .from('usuarios_simple')
+      .update({ equipo_id: null, es_capitan_equipo: false })
+      .eq('equipo_id', equipo_id)
+      .neq('id', capitan_id);
+
+    // Asignar al nuevo capitan
+    await supabase
+      .from('usuarios_simple')
+      .update({
+        equipo_id: equipo_id,
+        liga_id: liga_id,
+        es_capitan_equipo: true,
+        rol: 'capitan_equipo',
+      })
+      .eq('id', capitan_id);
+      
+    // Asegurar que el equipo tenga el capitan_id
+    await supabase
+      .from('equipos')
+      .update({ capitan_id })
+      .eq('id', equipo_id);
+  } else {
+    // Si capitan_id es null, quitar capitanía a quien la tuviera
+    await supabase
+      .from('usuarios_simple')
+      .update({ equipo_id: null, es_capitan_equipo: false })
+      .eq('equipo_id', equipo_id);
+      
+    await supabase
+      .from('equipos')
+      .update({ capitan_id: null })
+      .eq('id', equipo_id);
+  }
 }
 
 export async function deleteEquipo(id: string): Promise<void> {
@@ -210,6 +265,7 @@ export async function createJugador(data: CreateJugadorData, equipo_id: string):
       ...data,
       equipo_id,
       fecha_registro: new Date().toISOString(),
+      activo: false // Requiere aprobación del admin
     }])
     .select()
     .single();
@@ -326,6 +382,22 @@ export async function getPartidosPorLiga(liga_id: string): Promise<Partido[]> {
   return data || [];
 }
 
+export async function getPartidosPorEquipo(equipo_id: string) {
+  const { data, error } = await supabase
+    .from('partidos')
+    .select(`
+      *,
+      equipo_local:equipos!partidos_equipo_local_id_fkey(id, nombre, logo_url),
+      equipo_visitante:equipos!partidos_equipo_visitante_id_fkey(id, nombre, logo_url),
+      cancha:canchas(id, nombre)
+    `)
+    .or(`equipo_local_id.eq.${equipo_id},equipo_visitante_id.eq.${equipo_id}`)
+    .order('fecha_jornada', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export async function getPartido(id: string): Promise<Partido | null> {
   const { data, error } = await supabase
     .from('partidos')
@@ -373,18 +445,46 @@ export async function deletePartido(id: string): Promise<void> {
 // CANCHAS
 // ========================================
 
-export async function getCanchas(liga_id: string): Promise<Cancha[]> {
-  const { data, error } = await supabase
-    .from('canchas')
-    .select('*')
-    .eq('liga_id', liga_id)
-    .order('nombre');
+export async function getCanchas(liga_id: string): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('canchas')
+      .select('*, liga_canchas!inner(liga_id)')
+      .eq('liga_canchas.liga_id', liga_id)
+      .order('nombre');
+      
+    if (error) throw error;
     
-  if (error) throw error;
-  return data || [];
+    // Obtener TODAS las ligas para estas canchas (porque !inner filtra el array de liga_canchas)
+    if (data && data.length > 0) {
+      const canchaIds = data.map(c => c.id);
+      const { data: allRels } = await supabase
+        .from('liga_canchas')
+        .select('cancha_id, liga_id')
+        .in('cancha_id', canchaIds);
+        
+      if (allRels) {
+        return data.map(cancha => ({
+          ...cancha,
+          liga_ids: allRels.filter(r => r.cancha_id === cancha.id).map(r => r.liga_id)
+        }));
+      }
+    }
+    return data || [];
+  } catch (e) {
+    // Fallback if the new table doesn't exist yet
+    console.warn('Usando fallback para getCanchas (tabla liga_canchas no encontrada?)', e);
+    const { data, error } = await supabase
+      .from('canchas')
+      .select('*')
+      .eq('liga_id', liga_id)
+      .order('nombre');
+    if (error) throw error;
+    return data.map(c => ({ ...c, liga_ids: [c.liga_id] })) || [];
+  }
 }
 
-export async function getCancha(id: string): Promise<Cancha | null> {
+export async function getCancha(id: string): Promise<any | null> {
   const { data, error } = await supabase
     .from('canchas')
     .select('*')
@@ -392,32 +492,73 @@ export async function getCancha(id: string): Promise<Cancha | null> {
     .single();
     
   if (error) throw error;
-  return data;
+  
+  if (data) {
+    try {
+      const { data: rels } = await supabase.from('liga_canchas').select('liga_id').eq('cancha_id', id);
+      return { ...data, liga_ids: rels ? rels.map(r => r.liga_id) : [data.liga_id] };
+    } catch (e) {
+      return { ...data, liga_ids: [data.liga_id] };
+    }
+  }
+  return null;
 }
 
 export async function createCancha(data: CreateCanchaData, liga_id: string): Promise<Cancha> {
+  const { liga_ids, ...canchaData } = data;
+  
+  // Obtener owner_id
+  const { data: liga } = await supabase.from('ligas').select('owner_id').eq('id', liga_id).single();
+
   const { data: cancha, error } = await supabase
     .from('canchas')
     .insert([{
-      ...data,
-      liga_id,
+      ...canchaData,
+      liga_id, // Legacy compatibility
+      owner_id: liga?.owner_id
     }])
     .select()
     .single();
     
   if (error) throw error;
+  
+  // Crear relaciones en tabla puente
+  try {
+    const ligasToInsert = liga_ids && liga_ids.length > 0 ? liga_ids : [liga_id];
+    const bridgeData = ligasToInsert.map(id => ({ liga_id: id, cancha_id: cancha.id }));
+    await supabase.from('liga_canchas').insert(bridgeData);
+  } catch (e) {
+    console.error('Error insertando en liga_canchas', e);
+  }
+
   return cancha;
 }
 
-export async function updateCancha(id: string, data: Partial<Cancha>): Promise<Cancha> {
+export async function updateCancha(id: string, data: Partial<CreateCanchaData>): Promise<Cancha> {
+  const { liga_ids, ...canchaData } = data;
+
   const { data: cancha, error } = await supabase
     .from('canchas')
-    .update(data)
+    .update(canchaData)
     .eq('id', id)
     .select()
     .single();
     
   if (error) throw error;
+  
+  // Actualizar relaciones
+  if (liga_ids) {
+    try {
+      await supabase.from('liga_canchas').delete().eq('cancha_id', id);
+      if (liga_ids.length > 0) {
+        const bridgeData = liga_ids.map(l_id => ({ liga_id: l_id, cancha_id: id }));
+        await supabase.from('liga_canchas').insert(bridgeData);
+      }
+    } catch (e) {
+      console.error('Error actualizando liga_canchas', e);
+    }
+  }
+
   return cancha;
 }
 
@@ -804,7 +945,7 @@ export async function getInvitacionesPorEmail(email: string): Promise<Invitacion
     .from('invitaciones_capitanes')
     .select(`
       *,
-      liga:liga_id (id, nombre_liga, slug, logo_url),
+      liga:liga_id (id, nombre_liga, slug),
       equipo:equipo_id (id, nombre, logo_url)
     `)
     .eq('email', email.toLowerCase())
@@ -844,22 +985,51 @@ export async function aceptarInvitacionCapitan(
     throw new Error('La invitación ha expirado');
   }
 
-  // Crear equipo
-  const { data: equipo, error: errorEquipo } = await supabase
-    .from('equipos')
-    .insert([{
-      liga_id: invitacion.liga_id,
-      nombre: nombreEquipo || invitacion.nombre_equipo || `Equipo de ${invitacion.nombre || 'Capitán'}`,
-      logo_url: invitacion.equipo_id ? undefined : undefined,
-      color_primario: '#000000',
-      color_secundario: '#FFFFFF',
-      capitan_id: capitan_id,
-      activo: true,
-    }])
-    .select()
-    .single();
+  // Crear o actualizar equipo
+  let equipo;
+  
+  if (invitacion.equipo_id) {
+    // Actualizar equipo existente
+    const { data, error } = await supabase
+      .from('equipos')
+      .update({
+        capitan_id: capitan_id,
+        nombre: nombreEquipo && nombreEquipo !== invitacion.nombre_equipo ? nombreEquipo : undefined, // Solo actualiza el nombre si lo cambiaron
+      })
+      .eq('id', invitacion.equipo_id)
+      .select()
+      .single();
+      
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('Ya existe un equipo con ese nombre en esta liga. Por favor, elige otro.');
+      }
+      throw error;
+    }
+    equipo = data;
+  } else {
+    // Crear nuevo equipo
+    const { data, error } = await supabase
+      .from('equipos')
+      .insert([{
+        liga_id: invitacion.liga_id,
+        nombre: nombreEquipo || invitacion.nombre_equipo || `Equipo de ${invitacion.nombre || 'Capitán'}`,
+        color_primario: '#000000',
+        color_secundario: '#FFFFFF',
+        capitan_id: capitan_id,
+        activo: true,
+      }])
+      .select()
+      .single();
 
-  if (errorEquipo) throw errorEquipo;
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('Ya existe un equipo con ese nombre en esta liga. Por favor, elige otro.');
+      }
+      throw error;
+    }
+    equipo = data;
+  }
 
   // Actualizar invitación
   const { data: invitacionActualizada, error: errorUpdate } = await supabase
@@ -995,16 +1165,17 @@ export async function crearCapitanDirecto(
     apellido?: string;
     telefono?: string;
     nombre_equipo: string;
+    password?: string;
   }
-): Promise<{ user: UsuarioSimple; equipo: Equipo }> {
-  const password = generarPasswordTemporal();
+): Promise<{ user: UsuarioSimple; equipo: Equipo; passwordUsada: string }> {
+  const passwordUsada = datos.password || generarPasswordTemporal();
   
   // Paso 1: Crear usuario en usuarios_simple
   const { data: usuario, error: errorUsuario } = await supabase
     .from('usuarios_simple')
     .insert([{
       email: datos.email.toLowerCase(),
-      password: password,
+      password: passwordUsada,
       nombre: datos.nombre,
       apellido: datos.apellido || '',
       telefono: datos.telefono || null,
@@ -1053,9 +1224,9 @@ export async function crearCapitanDirecto(
   if (errorUpdate) throw errorUpdate;
 
   // TODO: Enviar email con contraseña temporal
-  console.log('Password temporal generado:', password);
+  console.log('Password temporal generado:', passwordUsada);
 
-  return { user: usuarioActualizado, equipo };
+  return { user: usuarioActualizado as any, equipo, passwordUsada };
 }
 
 // Generar password temporal
@@ -1134,4 +1305,18 @@ export async function getCapitanesSinLiga(): Promise<Array<{id: string, nombre: 
   }
 
   return (data || []) as Array<{id: string, nombre: string, apellido: string | null, email: string, rol: string, es_capitan_equipo: boolean, created_at: string}>;
+}
+
+export async function buscarUsuariosCandidatosCapitan(busqueda: string) {
+  if (!busqueda || busqueda.length < 2) return [];
+  
+  const { data, error } = await supabase
+    .from('usuarios_simple')
+    .select('id, nombre, apellido, email, telefono, rol')
+    .eq('rol', 'usuario')
+    .or(`email.ilike.%${busqueda}%,nombre.ilike.%${busqueda}%,apellido.ilike.%${busqueda}%`)
+    .limit(10);
+    
+  if (error) throw error;
+  return data || [];
 }

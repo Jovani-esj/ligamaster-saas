@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Eye, Users, Settings, User, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users, Settings, User, Calendar, CheckCircle } from 'lucide-react';
 
 interface JugadorManagerProps {
   equipoId: string;
@@ -66,6 +66,8 @@ export default function JugadorManager({ equipoId, equipoNombre }: JugadorManage
   const puedeCrearJugadores = permisos?.puede_crear_jugadores || false;
   const puedeEditarJugadores = permisos?.puede_editar_jugadores || false;
   const puedeEliminarJugadores = permisos?.puede_eliminar_jugadores || false;
+  
+  const isAdmin = profile?.rol === 'admin_liga' || profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
 
   const fetchJugadores = useCallback(async () => {
     try {
@@ -133,6 +135,18 @@ export default function JugadorManager({ equipoId, equipoNombre }: JugadorManage
     } catch (error) {
       console.error('Error deleting jugador:', error);
       toast.error('Error al eliminar el jugador');
+    }
+  };
+
+  const handleToggleAprobacion = async (jugador: Jugador) => {
+    if (!isAdmin) return;
+    try {
+      await updateJugador(jugador.id, { activo: !jugador.activo });
+      toast.success(jugador.activo ? 'Jugador suspendido/inactivo' : 'Jugador aprobado exitosamente');
+      fetchJugadores();
+    } catch (error) {
+      console.error('Error al cambiar estado:', error);
+      toast.error('Error al actualizar el estado del jugador');
     }
   };
 
@@ -364,8 +378,8 @@ export default function JugadorManager({ equipoId, equipoNombre }: JugadorManage
                       </div>
                     </div>
                   </div>
-                  <Badge className={jugador.activo ? 'bg-green-500' : 'bg-red-500'}>
-                    {jugador.activo ? 'Activo' : 'Inactivo'}
+                  <Badge className={jugador.activo ? 'bg-green-500' : 'bg-yellow-500 text-yellow-900'}>
+                    {jugador.activo ? 'Aprobado' : 'Pendiente'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -427,6 +441,18 @@ export default function JugadorManager({ equipoId, equipoNombre }: JugadorManage
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Eliminar
+                        </Button>
+                      )}
+                      
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant={jugador.activo ? "secondary" : "default"}
+                          className={!jugador.activo ? "bg-green-600 hover:bg-green-700" : ""}
+                          onClick={() => handleToggleAprobacion(jugador)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {jugador.activo ? 'Suspender' : 'Aprobar'}
                         </Button>
                       )}
                     </div>

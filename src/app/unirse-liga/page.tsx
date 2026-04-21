@@ -82,9 +82,9 @@ export default function UnirseLigaPage() {
       setShowForm(false);
       setSelectedLiga(null);
       await cargarDatos();
-    } catch (error) {
-      console.error('Error enviando solicitud:', error);
-      toast.error('Error al enviar la solicitud');
+    } catch (error: any) {
+      console.error('Error enviando solicitud:', error.message || error);
+      toast.error(`Error al enviar la solicitud: ${error.message || 'Desconocido'}`);
     } finally {
       setSubmitting(false);
     }

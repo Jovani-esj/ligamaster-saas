@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
   Menu, X, Trophy, Settings, Home, LogOut, User, Users, MapPin, Calendar, 
   Shield, FileText, DollarSign, BarChart3, CheckCircle, UserPlus,
-  Clock, Award, TrendingUp, ChevronRight
+  Clock, Award, TrendingUp, ChevronRight, CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
@@ -124,14 +124,21 @@ export default function RoleBasedNavigation() {
           href: '/equipos',
           label: 'Equipos',
           icon: Users,
-          roles: ['admin_liga', 'capitan_equipo'],
+          roles: ['admin_liga'],
           requiresAuth: true
         },
         {
-          href: '/gestion-jugadores',
-          label: 'Gestionar Jugadores',
-          icon: UserPlus,
+          href: '/mi-equipo',
+          label: 'Mi Equipo',
+          icon: Users,
           roles: ['capitan_equipo'],
+          requiresAuth: true
+        },
+        {
+          href: '/mis-invitaciones',
+          label: 'Mis Invitaciones',
+          icon: Shield,
+          roles: ['capitan_equipo', 'usuario'],
           requiresAuth: true
         }
       ]
@@ -179,6 +186,13 @@ export default function RoleBasedNavigation() {
           href: '/admin/pagos',
           label: 'Gestión de Pagos',
           icon: DollarSign,
+          roles: ['admin_liga'],
+          requiresAuth: true
+        },
+        {
+          href: '/suscripcion',
+          label: 'Suscripción SaaS',
+          icon: CreditCard,
           roles: ['admin_liga'],
           requiresAuth: true
         }

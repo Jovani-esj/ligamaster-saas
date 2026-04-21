@@ -342,7 +342,7 @@ export default function PerfilPage() {
                 </Link>
 
                 <Link
-                  href="/buscar"
+                  href="/unirse-liga"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <User className="h-8 w-8 text-purple-600 mr-3" />

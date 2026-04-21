@@ -1,0 +1,23 @@
+
+> ligamaster-saas@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.2.2 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 16.8s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/mi-equipo/page.tsx:287:34
+Type error: Cannot find name 'Badge'.
+
+  285 |                             <div>
+  286 |                               {p.estado === 'programado' ? (
+> 287 |                                 <Badge variant="secondary">Por Jugar</Badge>
+      |                                  ^
+  288 |                               ) : (
+  289 |                                 <div className="text-center px-4 py-2 bg-gray-100 rounded...
+  290 |                                   <span className="font-bold text-xl">{p.marcador_local} ...
+Next.js build worker exited with code: 1 and signal: null

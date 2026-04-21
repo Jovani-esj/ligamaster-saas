@@ -33,9 +33,9 @@ export default function MisInvitacionesPage() {
       setLoading(true);
       const data = await getInvitacionesPorEmail(user.email);
       setInvitaciones(data);
-    } catch (error) {
-      console.error('Error cargando invitaciones:', error);
-      toast.error('Error al cargar las invitaciones');
+    } catch (error: any) {
+      console.error('Error cargando invitaciones:', error.message || error);
+      toast.error(`Error al cargar las invitaciones: ${error.message || 'Desconocido'}`);
     } finally {
       setLoading(false);
     }
