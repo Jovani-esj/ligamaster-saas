@@ -23,6 +23,10 @@ export interface SimpleProfile {
   es_capitan_equipo: boolean;
   telefono?: string;
   fecha_nacimiento?: string;
+  deporte_preferido?: string;
+  nivel_juego?: string;
+  equipo_interes?: string;
+  posicion_preferida?: string;
   created_at: string;
   updated_at: string;
 }
@@ -39,7 +43,13 @@ interface SimpleAuthContextType {
   session: SimpleSession | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string, nombre: string, apellido?: string) => Promise<boolean>;
+  signUp: (
+    email: string, 
+    password: string, 
+    nombre: string, 
+    apellido?: string, 
+    extraData?: Record<string, any>
+  ) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -132,7 +142,8 @@ export function SimpleAuthProvider({ children }: { children: React.ReactNode }) 
     email: string, 
     password: string, 
     nombre: string, 
-    apellido?: string
+    apellido?: string,
+    extraData?: Record<string, any>
   ): Promise<boolean> => {
     try {
       setLoading(true);
@@ -142,7 +153,13 @@ export function SimpleAuthProvider({ children }: { children: React.ReactNode }) 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, nombre, apellido }),
+        body: JSON.stringify({ 
+          email, 
+          password, 
+          nombre, 
+          apellido,
+          ...extraData 
+        }),
       });
 
       const data = await response.json();

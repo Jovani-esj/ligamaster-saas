@@ -17,78 +17,61 @@ interface VerificationResult {
   redirect?: string;
 }
 
+// Segmentos de ruta raíz estáticos del sistema que NO deben tratarse como slugs de ligas dinámicas
+const staticRootSegments = new Set([
+  'admin',
+  'admin-admin',
+  'api',
+  'aprobaciones',
+  'auth',
+  'buscar',
+  'calendario',
+  'canchas',
+  'check-users',
+  'configuracion',
+  'configuracion-sistema',
+  'crear-liga',
+  'create-admin',
+  'dashboard',
+  'debug-dashboard',
+  'debug-roles',
+  'equipos',
+  'gestion-jugadores',
+  'gestion-ligas',
+  'liga',
+  'liga-inactiva',
+  'liga-no-encontrada',
+  'liga-suspendida',
+  'ligas',
+  'mis-ligas',
+  'perfil',
+  'reportes',
+  'roles-juego'
+]);
+
 export function useLeagueVerification() {
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Rutas que no requieren verificación de liga - memoized to prevent re-renders
-  const publicRoutes = useMemo(() => [
-    '/',
-    '/ligas',
-    '/liga',
-    '/auth/login',
-    '/auth/register',
-    '/auth/signup',
-    '/auth/registrarse',
-    '/auth/iniciar-sesion',
-    '/auth/recuperar-contraseña',
-    '/auth/restablecer-contraseña',
-    '/auth/callback',
-    '/auth/simple-login',
-    '/auth/simple-register',
-    '/dashboard',
-    '/admin',
-    '/admin/crear-liga',
-    '/admin/mis-ligas',
-    '/admin/canchas',
-    '/admin/programacion-partidos',
-    '/admin/aprobaciones',
-    '/admin/pagos',
-    '/admin/dashboard',
-    '/admin/usuarios',
-    '/admin-admin',
-    '/buscar',
-    '/mis-ligas',
-    '/perfil',
-    '/configuracion',
-    '/crear-liga',
-    '/canchas',
-    '/calendario',
-    '/aprobaciones',
-    '/roles-juego',
-    '/equipos',
-    '/liga-no-encontrada',
-    '/liga-inactiva',
-    '/liga-suspendida',
-    '/gestion-ligas',
-    '/reportes'
-  ], []);
-
-  // Extraer el slug de la URL para rutas dinámicas de ligas
+  // Extraer el slug de la URL para rutas dinámicas de ligas (el primer segmento de la ruta)
   const slugMatch = pathname.match(/^\/([^\/]+)/);
   const slug = slugMatch ? slugMatch[1] : null;
 
   // Determinar si se necesita verificación
   const needsVerification = useMemo(() => {
-    // Si es una ruta API, no verificar
+    // Si es una ruta de API, no verificar
     if (pathname.startsWith('/api/')) return false;
-    
-    // Si es una ruta /liga/, no verificar (rutas públicas de visualización)
-    if (pathname.startsWith('/liga/')) return false;
-    
-    // Si es una ruta /admin/, no verificar (rutas de administración)
-    if (pathname.startsWith('/admin/')) return false;
-    
-    // Si es una ruta pública o no hay slug, no verificar
-    if (publicRoutes.includes(pathname) || !slug) return false;
     
     // Si es una ruta de assets o archivos estáticos, no verificar
     if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.includes('.')) return false;
     
+    // Si no hay slug (ej: la raíz "/") o el segmento pertenece a una ruta estática conocida, no verificar
+    if (!slug || staticRootSegments.has(slug)) return false;
+    
     return true;
-  }, [pathname, slug, publicRoutes]);
+  }, [pathname, slug]);
 
   useEffect(() => {
     // Si no necesita verificación, establecer éxito inmediatamente
@@ -125,3 +108,4 @@ export function useLeagueVerification() {
 
   return { verificationResult, loading, slug };
 }
+

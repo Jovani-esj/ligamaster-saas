@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,13 +59,17 @@ interface Partido {
   equipo_local?: Equipo;
   equipo_visitante?: Equipo;
   cancha?: Cancha;
+  arbitro_id?: string;
 }
 
 export default function ProgramacionPartidos() {
-  const { user, profile, isAdminLiga, isAdminAdmin } = useAuth();
+  const { user, profile } = useSimpleAuth();
+  const isAdminLiga = profile?.rol === 'admin_liga';
+  const isAdminAdmin = profile?.rol === 'adminadmin' || profile?.rol === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [canchas, setCanchas] = useState<Cancha[]>([]);
+  const [referees, setReferees] = useState<any[]>([]);
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [configuracion, setConfiguracion] = useState<ConfiguracionTemporada | null>(null);
   const [showConfiguracion, setShowConfiguracion] = useState(false);
@@ -124,8 +128,18 @@ export default function ProgramacionPartidos() {
         .eq('liga_id', ligaId)
         .order('fecha_jornada', { ascending: true });
 
+      // Cargar árbitros
+      const { data: arbitrosData } = await supabase
+        .from('usuarios_simple')
+        .select('id, nombre, apellido')
+        .eq('liga_id', ligaId)
+        .eq('rol', 'arbitro')
+        .eq('activo', true)
+        .order('nombre');
+
       setEquipos(equiposData || []);
       setCanchas(canchasData || []);
+      setReferees(arbitrosData || []);
       setConfiguracion(configData);
       setPartidos(partidosData || []);
       
@@ -155,6 +169,25 @@ export default function ProgramacionPartidos() {
       cargarDatos();
     }
   }, [user, isAdminLiga, isAdminAdmin, cargarDatos]);
+
+  const asignarArbitro = async (partidoId: string, arbitroId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('partidos')
+        .update({ arbitro_id: arbitroId || null })
+        .eq('id', partidoId);
+
+      if (error) throw error;
+      toast.success('Árbitro asignado correctamente');
+      
+      setPartidos(prev => prev.map(p => 
+        p.id === partidoId ? { ...p, arbitro_id: arbitroId || undefined } : p
+      ));
+    } catch (error) {
+      console.error('Error asignando árbitro:', error);
+      toast.error('Error al asignar el árbitro');
+    }
+  };
 
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -700,14 +733,31 @@ export default function ProgramacionPartidos() {
                             <p className="font-medium">{partido.equipo_visitante?.nombre}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            partido.estado === 'programado' ? 'bg-blue-100 text-blue-800' :
-                            partido.estado === 'finalizado' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {partido.estado}
-                          </span>
+                        <div className="text-right space-y-2">
+                          <div>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              partido.estado === 'programado' ? 'bg-blue-100 text-blue-800' :
+                              partido.estado === 'finalizado' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {partido.estado}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1 justify-end text-xs">
+                            <span className="text-gray-500">Árbitro:</span>
+                            <select
+                              value={partido.arbitro_id || ''}
+                              onChange={(e) => asignarArbitro(partido.id, e.target.value || null)}
+                              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              <option value="">Sin asignar</option>
+                              {referees.map((ref) => (
+                                <option key={ref.id} value={ref.id}>
+                                  {ref.nombre} {ref.apellido}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                     ))

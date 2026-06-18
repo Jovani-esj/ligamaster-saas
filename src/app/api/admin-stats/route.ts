@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase-server';
+import { getSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function GET() {
   try {
+    const supabaseServer = await getSupabaseServerClient();
     // Obtener todas las ligas (sin restricciones RLS usando service role)
     const { data: ligasData, error: ligasError } = await supabaseServer
       .from('ligas')
@@ -19,7 +20,7 @@ export async function GET() {
 
     // Obtener estadísticas para cada liga
     const ligasConEstadisticas = await Promise.all(
-      (ligasData || []).map(async (liga) => {
+      (ligasData || []).map(async (liga: any) => {
         const { data: stats } = await supabaseServer
           .from('vista_estadisticas_liga')
           .select('*')

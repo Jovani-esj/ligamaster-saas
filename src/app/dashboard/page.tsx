@@ -9,7 +9,8 @@ const DASHBOARD_ALLOWED_ROLES = [
   'adminadmin', 
   'admin_liga',
   'capitan_equipo',
-  'usuario'
+  'usuario',
+  'arbitro'
 ];
 
 export default function DashboardPage() {

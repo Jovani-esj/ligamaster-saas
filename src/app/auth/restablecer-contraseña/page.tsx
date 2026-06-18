@@ -1,16 +1,13 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Lock, CheckCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Trophy, Lock, CheckCircle, Eye, EyeOff, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 function RestablecerContraseñaContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     password: '',
@@ -75,34 +72,45 @@ function RestablecerContraseñaContent() {
 
   if (!isValid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-red-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Token Inválido
-              </h2>
-              <p className="text-gray-600 mb-6">
-                El enlace de restablecimiento de contraseña es inválido o ha expirado.
-              </p>
-              <div className="space-y-4">
-                <Link href="/auth/recuperar-contraseña">
-                  <Button className="w-full">
-                    Solicitar Nuevo Enlace
-                  </Button>
-                </Link>
-                <Link href="/iniciar-sesion">
-                  <Button variant="outline" className="w-full">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Volver al Inicio de Sesión
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex flex-col justify-center items-center py-16 px-4">
+        <div className="text-center mb-8 max-w-sm">
+          <Link href="/" className="inline-flex items-center space-x-3 mb-4 group">
+            <div className="w-10 h-10 bg-red-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 group-hover:scale-105 transition-all">
+              <Trophy className="w-6 h-6" />
+            </div>
+            <span className="text-2xl font-black text-gray-900 tracking-tight">LigaMaster</span>
+          </Link>
+          <h1 className="text-3xl font-extrabold text-gray-950 tracking-tight text-red-600">
+            Enlace Inválido
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            El token de recuperación no es válido o ha expirado.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-w-md w-full p-8 space-y-6">
+          <div className="text-center space-y-4 py-4">
+            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <p className="text-gray-600 text-sm">
+              Por favor solicita un nuevo correo electrónico de recuperación de contraseña.
+            </p>
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={() => router.push('/auth/recuperar-contraseña')}
+                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-red-500/20 transition-all duration-200"
+              >
+                Solicitar Nuevo Enlace
+              </button>
+              <button
+                onClick={() => router.push('/auth/simple-login')}
+                className="w-full py-3 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-sm transition-colors"
+              >
+                Volver al Inicio de Sesión
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -110,115 +118,122 @@ function RestablecerContraseñaContent() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                ¡Contraseña Restablecida!
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Tu contraseña ha sido actualizada exitosamente.
-              </p>
-              <Link href="/iniciar-sesion">
-                <Button className="w-full">
-                  Iniciar Sesión
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex flex-col justify-center items-center py-16 px-4">
+        <div className="text-center mb-8 max-w-sm">
+          <Link href="/" className="inline-flex items-center space-x-3 mb-4 group">
+            <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all">
+              <Trophy className="w-6 h-6" />
+            </div>
+            <span className="text-2xl font-black text-gray-900 tracking-tight">LigaMaster</span>
+          </Link>
+          <h1 className="text-3xl font-extrabold text-gray-950 tracking-tight text-emerald-600">
+            ¡Éxito!
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Tu contraseña ha sido restablecida correctamente.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-w-md w-full p-8 space-y-6">
+          <div className="text-center space-y-4 py-4">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <p className="text-gray-600 text-sm">
+              Ahora puedes usar tu nueva contraseña para iniciar sesión.
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={() => router.push('/auth/simple-login')}
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/20 transition-all duration-200"
+              >
+                Iniciar Sesión
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Link 
-            href="/iniciar-sesion"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al inicio
-          </Link>
-          
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Restablecer Contraseña
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Ingresa tu nueva contraseña para continuar
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col justify-center items-center py-16 px-4">
+      
+      {/* Encabezado Principal */}
+      <div className="text-center mb-8 max-w-sm">
+        <Link href="/" className="inline-flex items-center space-x-3 mb-4 group">
+          <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-all">
+            <Trophy className="w-6 h-6" />
+          </div>
+          <span className="text-2xl font-black text-gray-900 tracking-tight">LigaMaster</span>
+        </Link>
+        <h1 className="text-3xl font-extrabold text-gray-950 tracking-tight">
+          Nueva Contraseña
+        </h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Ingresa tu nueva contraseña para actualizar tu cuenta.
+        </p>
+      </div>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-center">Nueva Contraseña</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="password">Nueva Contraseña *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Mínimo 6 caracteres"
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+      {/* Tarjeta de Formulario */}
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-w-md w-full p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full pl-11 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Repite tu nueva contraseña"
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Confirmar Nueva Contraseña</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                placeholder="Repite tu nueva contraseña"
+                className="w-full pl-11 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  {loading ? 'Actualizando...' : 'Restablecer Contraseña'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-50"
+            >
+              {loading ? 'Actualizando...' : 'Restablecer Contraseña'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -227,7 +242,7 @@ function RestablecerContraseñaContent() {
 export default function RestablecerContraseña() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     }>
@@ -235,3 +250,4 @@ export default function RestablecerContraseña() {
     </Suspense>
   );
 }
+

@@ -9,6 +9,7 @@ import AdminAdminDashboard from './AdminAdminDashboard';
 import AdminLigaDashboard from './AdminLigaDashboard';
 import CapitanDashboard from './CapitanDashboard';
 import UsuarioDashboard from './UsuarioDashboard';
+import ArbitroDashboard from './ArbitroDashboard';
 
 export default function DynamicDashboard() {
   const { user, profile } = useSimpleAuth();
@@ -38,6 +39,8 @@ export default function DynamicDashboard() {
       return <CapitanDashboard user={user} profile={profile} permisos={permisos} />;
     case 'usuario':
       return <UsuarioDashboard user={user} profile={profile} permisos={permisos} />;
+    case 'arbitro':
+      return <ArbitroDashboard user={user} profile={profile} />;
     default:
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">

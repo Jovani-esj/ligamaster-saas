@@ -13,7 +13,7 @@ import {
   updateCancha, 
   deleteCancha 
 } from '@/lib/database';
-import { useAuth } from '@/components/auth/AuthenticationSystem';
+import { useSimpleAuth } from '@/components/auth/SimpleAuthenticationSystem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,7 +47,7 @@ const SUPERFICIES = [
 ];
 
 export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps) {
-  const { profile } = useAuth();
+  const { profile } = useSimpleAuth();
   const [canchas, setCanchas] = useState<Cancha[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -67,7 +67,7 @@ export default function CanchaManager({ ligaId, ligaNombre }: CanchaManagerProps
   });
 
   // Verificar permisos
-  const permisos = profile ? PERMISOS_POR_ROL[profile.rol] : null;
+  const permisos = profile ? PERMISOS_POR_ROL[profile.rol as keyof typeof PERMISOS_POR_ROL] : null;
   const puedeVerCanchas = permisos?.puede_ver_canchas || false;
   const puedeCrearCanchas = permisos?.puede_crear_canchas || false;
   const puedeEditarCanchas = permisos?.puede_editar_canchas || false;

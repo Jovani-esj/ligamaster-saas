@@ -59,7 +59,7 @@ export interface UserProfile {
   apellido?: string;
   telefono?: string;
   fecha_nacimiento?: string;
-  rol: 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario';
+  rol: 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario' | 'arbitro';
   liga_id?: string;
   equipo_id?: string;
   es_capitan_equipo: boolean;
@@ -261,7 +261,7 @@ export interface EstadisticasEquipo {
 }
 
 // Tipos para permisos y acceso
-export type RolUsuario = 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario';
+export type RolUsuario = 'superadmin' | 'adminadmin' | 'admin_liga' | 'capitan_equipo' | 'usuario' | 'arbitro';
 
 export interface PermisosRol {
   puede_ver_ligas: boolean;
@@ -425,6 +425,34 @@ export const PERMISOS_POR_ROL: Record<RolUsuario, PermisosRol> = {
     puede_ver_partidos: true,
     puede_crear_partidos: false,
     puede_editar_partidos: false,
+    puede_eliminar_partidos: false,
+    puede_ver_canchas: true,
+    puede_crear_canchas: false,
+    puede_editar_canchas: false,
+    puede_eliminar_canchas: false,
+    puede_ver_configuracion: false,
+    puede_editar_configuracion: false,
+  },
+  arbitro: {
+    puede_ver_ligas: true,
+    puede_crear_ligas: false,
+    puede_editar_ligas: false,
+    puede_eliminar_ligas: false,
+    puede_ver_equipos: true,
+    puede_crear_equipos: false,
+    puede_editar_equipos: false,
+    puede_eliminar_equipos: false,
+    puede_ver_jugadores: true,
+    puede_crear_jugadores: false,
+    puede_editar_jugadores: false,
+    puede_eliminar_jugadores: false,
+    puede_ver_torneos: true,
+    puede_crear_torneos: false,
+    puede_editar_torneos: false,
+    puede_eliminar_torneos: false,
+    puede_ver_partidos: true,
+    puede_crear_partidos: false,
+    puede_editar_partidos: true,
     puede_eliminar_partidos: false,
     puede_ver_canchas: true,
     puede_crear_canchas: false,
