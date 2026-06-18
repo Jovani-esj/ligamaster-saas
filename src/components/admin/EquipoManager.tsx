@@ -30,6 +30,10 @@ import Image from 'next/image';
 
 export default function EquipoManager({ ligaId }: { ligaId?: string }) {
   const { profile } = useSimpleAuth();
+  
+  // Usar la ligaId prop o el fallback del perfil del usuario logueado
+  const effectiveLigaId = ligaId || profile?.liga_id;
+
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -55,11 +59,11 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
   const puedeEliminarEquipos = permisos?.puede_eliminar_equipos || false;
 
   const fetchEquipos = useCallback(async () => {
-    if (!ligaId) return;
+    if (!effectiveLigaId) return;
     
     try {
       setLoading(true);
-      const data = await getEquipos(ligaId);
+      const data = await getEquipos(effectiveLigaId);
       setEquipos(data);
     } catch (error) {
       console.error('Error fetching equipos:', error);
@@ -67,13 +71,13 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
     } finally {
       setLoading(false);
     }
-  }, [ligaId]);
+  }, [effectiveLigaId]);
 
   useEffect(() => {
-    if (puedeVerEquipos && ligaId) {
+    if (puedeVerEquipos && effectiveLigaId) {
       fetchEquipos();
     }
-  }, [puedeVerEquipos, ligaId, fetchEquipos]);
+  }, [puedeVerEquipos, effectiveLigaId, fetchEquipos]);
 
   const fetchJugadores = async (equipoId: string) => {
     try {
@@ -98,10 +102,10 @@ export default function EquipoManager({ ligaId }: { ligaId?: string }) {
 
   const handleCreateEquipo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!puedeCrearEquipos || !ligaId) return;
+    if (!puedeCrearEquipos || !effectiveLigaId) return;
 
     try {
-      await createEquipo(formData, ligaId);
+      await createEquipo(formData, effectiveLigaId);
       toast.success('Equipo creado correctamente');
       setShowCreateDialog(false);
       setFormData({ nombre: '', logo_url: '', color_primario: '#000000', color_secundario: '#FFFFFF' });

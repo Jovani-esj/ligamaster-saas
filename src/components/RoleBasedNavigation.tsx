@@ -107,7 +107,7 @@ export default function RoleBasedNavigation() {
           href: '/dashboard',
           label: 'Dashboard',
           icon: BarChart3,
-          roles: ['superadmin', 'adminadmin', 'admin_liga', 'capitan_equipo', 'usuario'],
+          roles: ['superadmin', 'adminadmin', 'admin_liga', 'capitan_equipo', 'usuario', 'arbitro'],
           requiresAuth: true,
           badge: 'Nuevo'
         },
@@ -115,7 +115,7 @@ export default function RoleBasedNavigation() {
           href: '/perfil',
           label: 'Mi Perfil',
           icon: User,
-          roles: ['superadmin', 'adminadmin', 'admin_liga', 'capitan_equipo', 'usuario'],
+          roles: ['superadmin', 'adminadmin', 'admin_liga', 'capitan_equipo', 'usuario', 'arbitro'],
           requiresAuth: true
         }
       ]
@@ -143,23 +143,9 @@ export default function RoleBasedNavigation() {
       title: 'Administración de Liga',
       items: [
         {
-          href: '/admin/crear-liga',
-          label: 'Crear Liga',
-          icon: Trophy,
-          roles: ['admin_liga'],
-          requiresAuth: true
-        },
-        {
           href: '/admin/mis-ligas',
           label: 'Mis Ligas',
           icon: Shield,
-          roles: ['admin_liga'],
-          requiresAuth: true
-        },
-        {
-          href: '/admin/canchas',
-          label: 'Canchas',
-          icon: MapPin,
           roles: ['admin_liga'],
           requiresAuth: true
         },
